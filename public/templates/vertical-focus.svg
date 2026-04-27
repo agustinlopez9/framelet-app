@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Vertical focus preview">
+  <rect width="320" height="180" fill="#fafafa"/>
+  <rect x="120" y="14" width="80" height="34" rx="3" fill="#d4d4d8" opacity="0.5"/>
+  <rect x="100" y="58" width="120" height="64" rx="4" fill="#3f3f46"/>
+  <rect x="120" y="132" width="80" height="34" rx="3" fill="#d4d4d8" opacity="0.5"/>
+</svg>
