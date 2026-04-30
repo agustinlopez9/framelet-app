@@ -110,31 +110,40 @@ function FocusItem({ url, alt, reducedMotion, onOpen, ariaLabel }: FocusItemProp
   );
 }
 
-function VerticalFocus({ portfolio, images }: TemplateProps) {
+function VerticalFocus({ portfolio, images, hideHeader }: TemplateProps) {
   const { openAt, interactive } = useShowcaseLightbox();
   const reducedMotion = usePrefersReducedMotion();
 
   if (images.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
-        {portfolio.bio ? (
-          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
-        ) : null}
+        {hideHeader ? null : (
+          <>
+            <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+            {portfolio.bio ? (
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
+            ) : null}
+          </>
+        )}
         <p className="mt-10 text-muted-foreground">No images yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative mx-auto max-w-2xl px-4 pb-[40vh] pt-12">
+    <div
+      className="relative mx-auto w-full max-w-[min(85vw,1100px)] px-2 pb-[40vh] pt-12 sm:px-4"
+      style={{ fontSize: 'calc(1rem * var(--portfolio-font-scale, 1))' }}
+    >
       <OpenInViewerButton />
-      <header className="mb-24 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
-        {portfolio.bio ? (
-          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
-        ) : null}
-      </header>
+      {hideHeader ? null : (
+        <header className="mb-24 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+          {portfolio.bio ? (
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
+          ) : null}
+        </header>
+      )}
       <div className="space-y-[20vh]">
         {images.map((image, idx) => (
           <FocusItem

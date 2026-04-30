@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SortableContext, useSortable, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,12 +23,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Trash2,
   Pencil,
   GripVertical,
   FolderInput,
+  FolderClosed,
+  Eye,
+  Home,
   LayoutGrid,
   List as ListIcon,
+  MoreVertical,
   X,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -38,19 +48,24 @@ import type { ImageFolder, PortfolioImage } from '@/types';
 import { useDeleteImage, useFolders, useUpdateImage } from './queries';
 import { imageMetadataSchema, type ImageMetadataValues } from './schemas';
 import { toast } from '@/hooks/use-toast';
-import { useViewMode } from './useViewMode';
-import type { FolderSelection } from './FolderRail';
+import type { ViewMode } from './useViewMode';
+import { FolderRail, type FolderSelection } from './FolderRail';
 
 interface ImageListProps {
   portfolioId: string;
   images: PortfolioImage[];
   folders: ImageFolder[];
+  allImages: PortfolioImage[];
   selected: FolderSelection;
+  onSelectFolder: (next: FolderSelection) => void;
   selection: Set<string>;
   onToggleSelection: (id: string) => void;
   onClearSelection: () => void;
   onSelectAll: () => void;
   onMoveSelected: (folderId: string | null) => void | Promise<void>;
+  onOpenViewer: (image: PortfolioImage) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (next: ViewMode) => void;
   emptyHint?: string;
 }
 
@@ -58,57 +73,60 @@ export function ImageList({
   portfolioId,
   images,
   folders,
+  allImages,
   selected,
+  onSelectFolder,
   selection,
   onToggleSelection,
   onClearSelection,
   onSelectAll,
   onMoveSelected,
+  onOpenViewer,
+  viewMode,
+  onViewModeChange,
   emptyHint,
 }: ImageListProps) {
   const [editing, setEditing] = useState<PortfolioImage | null>(null);
   const [deleting, setDeleting] = useState<PortfolioImage | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [movePickerOpen, setMovePickerOpen] = useState(false);
-  const [viewMode, setViewMode] = useViewMode();
 
   const allInViewSelected = images.length > 0 && images.every((img) => selection.has(img.id));
   const folderById = new Map(folders.map((f) => [f.id, f]));
 
   return (
     <Card className="relative">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <CardTitle>Your images</CardTitle>
-            <CardDescription>
-              Drag to reorder, drop on a folder to file, or use checkboxes for bulk actions.
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              size="icon"
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              className="h-8 w-8"
-              onClick={() => setViewMode('grid')}
-              aria-label="Grid view"
-              aria-pressed={viewMode === 'grid'}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              className="h-8 w-8"
-              onClick={() => setViewMode('list')}
-              aria-label="List view"
-              aria-pressed={viewMode === 'list'}
-            >
-              <ListIcon className="h-4 w-4" />
-            </Button>
-          </div>
+      <CardHeader className="space-y-3">
+        <FolderRail
+          portfolioId={portfolioId}
+          folders={folders}
+          images={allImages}
+          selected={selected}
+          onSelect={onSelectFolder}
+        />
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            type="button"
+            size="icon"
+            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+            className="h-8 w-8"
+            onClick={() => onViewModeChange('grid')}
+            aria-label="Grid view"
+            aria-pressed={viewMode === 'grid'}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+            className="h-8 w-8"
+            onClick={() => onViewModeChange('list')}
+            aria-label="List view"
+            aria-pressed={viewMode === 'list'}
+          >
+            <ListIcon className="h-4 w-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -128,7 +146,7 @@ export function ImageList({
           </p>
         ) : viewMode === 'grid' ? (
           <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {images.map((image) => (
                 <SortableImageCard
                   key={image.id}
@@ -138,6 +156,7 @@ export function ImageList({
                   onToggleSelection={() => onToggleSelection(image.id)}
                   onEdit={() => setEditing(image)}
                   onDelete={() => setDeleting(image)}
+                  onView={() => onOpenViewer(image)}
                 />
               ))}
             </div>
@@ -155,6 +174,7 @@ export function ImageList({
                   onToggleSelection={() => onToggleSelection(image.id)}
                   onEdit={() => setEditing(image)}
                   onDelete={() => setDeleting(image)}
+                  onView={() => onOpenViewer(image)}
                 />
               ))}
             </ul>
@@ -253,6 +273,7 @@ function SortableImageCard({
   onToggleSelection,
   onEdit,
   onDelete,
+  onView,
 }: {
   image: PortfolioImage;
   selected: boolean;
@@ -260,6 +281,7 @@ function SortableImageCard({
   onToggleSelection: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onView: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: image.id,
@@ -297,22 +319,51 @@ function SortableImageCard({
         )}
         onClick={(e) => e.stopPropagation()}
       />
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-gradient-to-b from-black/0 via-black/0 to-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/60 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           {...attributes}
           {...listeners}
           aria-label="Drag to reorder or onto a folder"
-          className="pointer-events-auto m-2 self-end rounded bg-black/50 p-1 text-white"
+          className="pointer-events-auto absolute right-2 top-2 rounded bg-black/50 p-1 text-white"
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <div className="pointer-events-auto flex items-center justify-between gap-2 p-2">
-          <Button size="icon" variant="secondary" onClick={onEdit} aria-label="Edit image">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button size="icon" variant="destructive" onClick={onDelete} aria-label="Delete image">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          onClick={onView}
+          aria-label="View image fullscreen"
+          className="pointer-events-auto absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        >
+          <Eye className="h-5 w-5" />
+        </Button>
+        <div className="pointer-events-auto absolute bottom-2 right-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="secondary"
+                aria-label="Image actions"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={onEdit}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={onDelete}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
@@ -327,6 +378,7 @@ function SortableImageRow({
   onToggleSelection,
   onEdit,
   onDelete,
+  onView,
 }: {
   image: PortfolioImage;
   folderName?: string;
@@ -335,6 +387,7 @@ function SortableImageRow({
   onToggleSelection: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onView: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: image.id,
@@ -383,17 +436,34 @@ function SortableImageRow({
           <p className="truncate text-xs text-muted-foreground">{folderName}</p>
         ) : null}
       </div>
-      <Button size="icon" variant="ghost" onClick={onEdit} aria-label="Edit image">
-        <Pencil className="h-4 w-4" />
+      <Button size="icon" variant="ghost" onClick={onView} aria-label="View image fullscreen">
+        <Eye className="h-4 w-4" />
       </Button>
-      <Button size="icon" variant="ghost" onClick={onDelete} aria-label="Delete image">
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="ghost" aria-label="Image actions">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={onEdit}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={onDelete}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </li>
   );
 }
 
-function EditDialog({
+export function EditDialog({
   image,
   portfolioId,
   onClose,
@@ -472,6 +542,9 @@ function EditDialog({
                   <FormControl>
                     <Input maxLength={200} {...field} />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Describes the image for screen readers. Defaults to title if empty.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -515,14 +588,16 @@ function EditDialog({
   );
 }
 
-function DeleteImageConfirm({
+export function DeleteImageConfirm({
   image,
   portfolioId,
   onClose,
+  onDeleted,
 }: {
   image: PortfolioImage;
   portfolioId: string;
   onClose: () => void;
+  onDeleted?: () => void;
 }) {
   const del = useDeleteImage(portfolioId);
 
@@ -530,6 +605,7 @@ function DeleteImageConfirm({
     try {
       await del.mutateAsync(image);
       toast({ title: 'Image deleted' });
+      onDeleted?.();
       onClose();
     } catch (err) {
       toast({
@@ -640,7 +716,8 @@ function MovePickerDialog({
               onClick={() => pick(null)}
               disabled={busy}
             >
-              <span>Unfiled</span>
+              <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>Root</span>
             </button>
           </li>
           {folders.map((folder) => (
@@ -651,6 +728,7 @@ function MovePickerDialog({
                 onClick={() => pick(folder.id)}
                 disabled={busy}
               >
+                <FolderClosed className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span>{folder.name}</span>
               </button>
             </li>

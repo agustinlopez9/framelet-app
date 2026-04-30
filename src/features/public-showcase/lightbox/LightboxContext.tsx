@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { PortfolioImage } from '@/types';
 
@@ -29,6 +29,18 @@ export function LightboxProvider({ images, children }: LightboxProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const triggerRef = useRef<HTMLElement | null>(null);
+
+  // Reconcile activeIndex when the underlying images set shrinks (e.g. the
+  // active image was deleted from the dashboard while the lightbox is open).
+  useEffect(() => {
+    if (images.length === 0) {
+      if (isOpen) setIsOpen(false);
+      return;
+    }
+    if (activeIndex >= images.length) {
+      setActiveIndex(images.length - 1);
+    }
+  }, [images.length, activeIndex, isOpen]);
 
   const openAt = useCallback((index: number, trigger: HTMLElement | null = null) => {
     if (index < 0 || index >= images.length) return;

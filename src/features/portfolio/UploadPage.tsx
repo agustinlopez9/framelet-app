@@ -8,17 +8,19 @@ import {
   ACCEPTED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
   UploadValidationError,
+  deriveTitleFromFilename,
   uploadImage,
   validateFile,
 } from '@/lib/api/images';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { imagesKey } from './queries';
-import { Upload, X } from 'lucide-react';
+import { Check, Upload, X } from 'lucide-react';
 
 interface QueueItem {
   id: string;
   file: File;
+  title: string;
   status: 'pending' | 'uploading' | 'done' | 'error' | 'invalid';
   progress: number;
   error?: string;
@@ -35,13 +37,15 @@ export function UploadPage() {
   const onDrop = useCallback((files: File[]) => {
     const next: QueueItem[] = files.map((file) => {
       const id = crypto.randomUUID();
+      const title = deriveTitleFromFilename(file.name);
       try {
         validateFile(file);
-        return { id, file, status: 'pending', progress: 0 };
+        return { id, file, title, status: 'pending', progress: 0 };
       } catch (err) {
         return {
           id,
           file,
+          title,
           status: 'invalid',
           progress: 0,
           error: err instanceof UploadValidationError ? err.message : 'Invalid file.',
@@ -78,6 +82,7 @@ export function UploadPage() {
         ownerId: portfolio.ownerId,
         portfolioId: portfolio.id,
         file: item.file,
+        title: item.title,
         onProgress: (fraction) => updateItem(id, { progress: Math.round(fraction * 100) }),
         signal: controller.signal,
       });
@@ -99,6 +104,12 @@ export function UploadPage() {
     }
     if (pending.length > 0) toast({ title: `Uploaded ${pending.length} image(s)` });
   }
+
+  function clearList() {
+    setQueue((prev) => prev.filter((q) => q.status === 'uploading'));
+  }
+
+  const hasClearable = queue.some((q) => q.status !== 'uploading');
 
   return (
     <div className="space-y-6">
@@ -131,19 +142,36 @@ export function UploadPage() {
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Queue ({queue.length})</CardTitle>
-            <Button onClick={startAll} disabled={!queue.some((q) => q.status === 'pending')}>
-              Upload all
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={clearList}
+                disabled={!hasClearable}
+              >
+                Clear list
+              </Button>
+              <Button onClick={startAll} disabled={!queue.some((q) => q.status === 'pending')}>
+                Upload all
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {queue.map((item) => (
               <div key={item.id} className="rounded-md border p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{item.file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(item.file.size / 1024 / 1024).toFixed(2)}MB · {statusLabel(item)}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    {item.status === 'done' ? (
+                      <Check
+                        className="h-5 w-5 shrink-0 text-emerald-600"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{item.file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(item.file.size / 1024 / 1024).toFixed(2)}MB · {statusLabel(item)}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {item.status === 'pending' ? (
@@ -188,7 +216,7 @@ function statusLabel(item: QueueItem): string {
     case 'uploading':
       return `${item.progress}%`;
     case 'done':
-      return 'Uploaded';
+      return 'Done';
     case 'error':
       return 'Failed';
     case 'invalid':

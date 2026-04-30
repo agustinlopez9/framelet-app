@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import SimpleGrid from './simple-grid';
 import SideTitles from './side-titles';
 import AlternatingTitles from './alternating-titles';
 import VerticalFocus from './vertical-focus';
+import Gallery3D from './gallery-3d/Gallery3D';
 import type { Portfolio, PortfolioImage } from '@/types';
 
 function makePortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
@@ -131,5 +132,81 @@ describe('vertical-focus', () => {
     items.forEach((el) => {
       expect((el as HTMLElement).style.transition).toBe('none');
     });
+  });
+});
+
+describe('gallery-3d', () => {
+  beforeAll(() => {
+    // JSDOM does not implement Pointer Capture; stub the methods Gallery3D
+    // calls so the drag handlers can run without throwing.
+    const proto = Element.prototype as unknown as {
+      setPointerCapture?: (id: number) => void;
+      releasePointerCapture?: (id: number) => void;
+      hasPointerCapture?: (id: number) => boolean;
+    };
+    if (typeof proto.setPointerCapture !== 'function') {
+      proto.setPointerCapture = () => {};
+    }
+    if (typeof proto.releasePointerCapture !== 'function') {
+      proto.releasePointerCapture = () => {};
+    }
+    if (typeof proto.hasPointerCapture !== 'function') {
+      proto.hasPointerCapture = () => false;
+    }
+  });
+
+  function activeImageSrc(): string | null {
+    const active = document.querySelector('button[aria-current="true"] img');
+    return active?.getAttribute('src') ?? null;
+  }
+
+  it('advances the active image by one when the user drags ~one snap', () => {
+    render(<Gallery3D portfolio={makePortfolio()} images={makeImages(5)} config={{}} />);
+    expect(activeImageSrc()).toBe('https://example.com/img-0.jpg');
+
+    const stage = screen.getByTestId('gallery-3d-stage');
+    fireEvent.pointerDown(stage, { pointerId: 1, clientX: 300, button: 0 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 200 });
+
+    // Drag left by ~SNAP_PX (100) → next image.
+    expect(activeImageSrc()).toBe('https://example.com/img-1.jpg');
+  });
+
+  it('advances by multiple images for a long swipe', () => {
+    render(<Gallery3D portfolio={makePortfolio()} images={makeImages(5)} config={{}} />);
+    const stage = screen.getByTestId('gallery-3d-stage');
+    // 320px swipe ≈ 3 snaps → advance by 3.
+    fireEvent.pointerDown(stage, { pointerId: 1, clientX: 400, button: 0 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 80 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 80 });
+    expect(activeImageSrc()).toBe('https://example.com/img-3.jpg');
+  });
+
+  it('does not advance when the drag is below the dead-zone', () => {
+    render(<Gallery3D portfolio={makePortfolio()} images={makeImages(3)} config={{}} />);
+    const stage = screen.getByTestId('gallery-3d-stage');
+    fireEvent.pointerDown(stage, { pointerId: 1, clientX: 200, button: 0 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 180 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 180 });
+
+    expect(activeImageSrc()).toBe('https://example.com/img-0.jpg');
+  });
+
+  it('keeps responding to keyboard arrow controls', () => {
+    render(<Gallery3D portfolio={makePortfolio()} images={makeImages(3)} config={{}} />);
+    expect(activeImageSrc()).toBe('https://example.com/img-0.jpg');
+
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(activeImageSrc()).toBe('https://example.com/img-1.jpg');
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    expect(activeImageSrc()).toBe('https://example.com/img-0.jpg');
+  });
+
+  it('does not render side-mounted nav buttons or N/M counter', () => {
+    render(<Gallery3D portfolio={makePortfolio()} images={makeImages(3)} config={{}} />);
+    expect(screen.queryByRole('button', { name: 'Previous image' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next image' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\d+\s*\/\s*\d+$/)).not.toBeInTheDocument();
   });
 });

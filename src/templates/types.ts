@@ -9,6 +9,10 @@ export interface TemplateProps<C extends TemplateConfig = TemplateConfig> {
   // viewer features (e.g. fullscreen) MUST suppress them here because the
   // preview is wrapped in a transform-scaled ancestor.
   inPreview?: boolean;
+  // True when the host is rendering the portfolio header (title + bio) itself
+  // — e.g. above a folder tab strip. Templates skip their own header block
+  // so the title doesn't appear twice.
+  hideHeader?: boolean;
 }
 
 export interface Template<C extends TemplateConfig = TemplateConfig> {

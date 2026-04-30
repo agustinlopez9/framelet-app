@@ -6,6 +6,12 @@ export interface FontEntry {
   description: string;
   stack: string;
   googleFamily?: string;
+  /**
+   * Multiplier applied on top of the portfolio's `fontScale` so fonts that
+   * render visually larger or smaller at the same pixel size are normalised
+   * across families. Default 1.0.
+   */
+  scaleAdjust?: number;
 }
 
 export const fontCatalog: FontEntry[] = [
@@ -21,6 +27,8 @@ export const fontCatalog: FontEntry[] = [
     description: 'Refined display serif.',
     stack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
     googleFamily: 'Cormorant+Garamond:wght@400;500;600;700',
+    // Cormorant runs visually small; nudge up a touch.
+    scaleAdjust: 1.05,
   },
   {
     id: 'modern',
@@ -35,13 +43,20 @@ export const fontCatalog: FontEntry[] = [
     description: 'Monospace with arcade vibe.',
     stack: '"JetBrains Mono", ui-monospace, "Courier New", monospace',
     googleFamily: 'JetBrains+Mono:wght@400;500;600;700',
+    // Monospace fonts read narrower per glyph; bump slightly so body type
+    // doesn't feel cramped relative to the sans options.
+    scaleAdjust: 0.98,
   },
   {
+    // Slot id stays `cursive` for backwards compatibility with existing
+    // portfolios; the family is now a calmer humanist display serif.
     id: 'cursive',
-    label: 'Cursive (subtle)',
-    description: 'Handwritten — understated, not flashy.',
-    stack: '"Caveat", "Comic Sans MS", cursive',
-    googleFamily: 'Caveat:wght@400;500;600;700',
+    label: 'Display Serif',
+    description: 'Calm humanist serif — display weight without the flourish.',
+    stack: '"Marcellus", Georgia, "Times New Roman", serif',
+    googleFamily: 'Marcellus:wght@400',
+    // Marcellus renders a touch large at the same px size; gentle pull-back.
+    scaleAdjust: 0.96,
   },
 ];
 

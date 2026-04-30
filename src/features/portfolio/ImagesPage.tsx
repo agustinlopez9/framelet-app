@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -11,19 +11,41 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import type { PortfolioImage } from '@/types';
+import type { ImageFolder, PortfolioImage } from '@/types';
 import { UploadPage } from './UploadPage';
-import { ImageList } from './ImageList';
-import { FolderRail, type FolderSelection } from './FolderRail';
+import { DeleteImageConfirm, EditDialog, ImageList } from './ImageList';
+import { type FolderSelection } from './FolderRail';
+import { useViewMode, type ViewMode } from './useViewMode';
+import { DashboardLightboxToolbar } from './DashboardLightboxToolbar';
+import {
+  LightboxProvider,
+  useLightboxState,
+} from '@/features/public-showcase/lightbox/LightboxContext';
+import { Lightbox } from '@/features/public-showcase/lightbox/Lightbox';
 import {
   imagesKey,
   useFolders,
   useImages,
   useMyPortfolio,
-  useReorderFolders,
   useReorderImages,
   useUpdateImage,
 } from './queries';
+
+/**
+ * Drop selection ids that are no longer visible. Returns the same Set
+ * reference when nothing changed so the React state setter can short-circuit.
+ */
+export function reconcileSelection(prev: Set<string>, visibleIds: string[]): Set<string> {
+  if (prev.size === 0) return prev;
+  const visible = new Set(visibleIds);
+  let changed = false;
+  const next = new Set<string>();
+  for (const id of prev) {
+    if (visible.has(id)) next.add(id);
+    else changed = true;
+  }
+  return changed ? next : prev;
+}
 
 export function ImagesPage() {
   const qc = useQueryClient();
@@ -31,10 +53,14 @@ export function ImagesPage() {
   const { data: allImages = [] } = useImages(portfolio?.id);
   const { data: folders = [] } = useFolders(portfolio?.id);
   const reorderImages = useReorderImages(portfolio?.id ?? '');
-  const reorderFolders = useReorderFolders(portfolio?.id ?? '');
   const updateImage = useUpdateImage(portfolio?.id ?? '');
   const [selected, setSelected] = useState<FolderSelection>('all');
   const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useViewMode();
+  // Lightbox-driven Edit/Delete dialogs live here so they sit above the
+  // lightbox via Radix portals.
+  const [lightboxEditing, setLightboxEditing] = useState<PortfolioImage | null>(null);
+  const [lightboxDeleting, setLightboxDeleting] = useState<PortfolioImage | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const toggleSelection = useCallback((id: string) => {
@@ -53,6 +79,10 @@ export function ImagesPage() {
     return allImages.filter((img) => img.folderId === selected);
   }, [allImages, selected]);
 
+  useEffect(() => {
+    setSelection((prev) => reconcileSelection(prev, visibleImages.map((img) => img.id)));
+  }, [visibleImages]);
+
   if (!portfolio) {
     return (
       <div className="space-y-4">
@@ -62,20 +92,13 @@ export function ImagesPage() {
     );
   }
 
+  // Folder reordering is intentionally not supported in this pass — folders
+  // render as a horizontal tab strip whose order is API-determined. The drag
+  // handler only moves images (across folders or within the active list).
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
-    const activeType = active.data.current?.type;
     const overId = String(over.id);
-
-    if (activeType === 'folder') {
-      if (active.id === over.id) return;
-      const oldIdx = folders.findIndex((f) => f.id === active.id);
-      const newIdx = folders.findIndex((f) => f.id === over.id);
-      if (oldIdx === -1 || newIdx === -1) return;
-      reorderFolders.mutate(arrayMove(folders, oldIdx, newIdx));
-      return;
-    }
 
     if (overId.startsWith('folder:')) {
       const target = overId.slice('folder:'.length);
@@ -116,35 +139,126 @@ export function ImagesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-32">
       <UploadPage />
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
-          <FolderRail
+      <LightboxProvider images={visibleImages}>
+        <ImagesPageInner
+          portfolioId={portfolio.id}
+          allImages={allImages}
+          visibleImages={visibleImages}
+          folders={folders}
+          selected={selected}
+          onSelectFolder={setSelected}
+          selection={selection}
+          onToggleSelection={toggleSelection}
+          onClearSelection={clearSelection}
+          onSelectAll={() => setSelection(new Set(visibleImages.map((img) => img.id)))}
+          onMoveSelected={(folderId) => moveImagesToFolder(Array.from(selection), folderId)}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          sensors={sensors}
+          onDragEnd={onDragEnd}
+          onLightboxEdit={setLightboxEditing}
+          onLightboxDelete={setLightboxDeleting}
+        />
+        {lightboxEditing ? (
+          <EditDialog
+            image={lightboxEditing}
             portfolioId={portfolio.id}
-            folders={folders}
-            images={allImages}
-            selected={selected}
-            onSelect={setSelected}
+            onClose={() => setLightboxEditing(null)}
           />
-          <ImageList
+        ) : null}
+        {lightboxDeleting ? (
+          <DeleteImageConfirm
+            image={lightboxDeleting}
             portfolioId={portfolio.id}
-            images={visibleImages}
-            folders={folders}
-            selected={selected}
-            selection={selection}
-            onToggleSelection={toggleSelection}
-            onClearSelection={clearSelection}
-            onSelectAll={() => setSelection(new Set(visibleImages.map((img) => img.id)))}
-            onMoveSelected={(folderId) => moveImagesToFolder(Array.from(selection), folderId)}
-            emptyHint={
-              selected === 'all'
-                ? 'No images yet. Upload some above.'
-                : 'No images in this folder yet — drag some here from another view.'
-            }
+            onClose={() => setLightboxDeleting(null)}
           />
-        </div>
-      </DndContext>
+        ) : null}
+      </LightboxProvider>
     </div>
+  );
+}
+
+interface ImagesPageInnerProps {
+  portfolioId: string;
+  allImages: PortfolioImage[];
+  visibleImages: PortfolioImage[];
+  folders: ImageFolder[];
+  selected: FolderSelection;
+  onSelectFolder: (next: FolderSelection) => void;
+  selection: Set<string>;
+  onToggleSelection: (id: string) => void;
+  onClearSelection: () => void;
+  onSelectAll: () => void;
+  onMoveSelected: (folderId: string | null) => void | Promise<void>;
+  viewMode: ViewMode;
+  onViewModeChange: (next: ViewMode) => void;
+  sensors: ReturnType<typeof useSensors>;
+  onDragEnd: (event: DragEndEvent) => void;
+  onLightboxEdit: (image: PortfolioImage) => void;
+  onLightboxDelete: (image: PortfolioImage) => void;
+}
+
+/**
+ * Renders the dashboard image manager inside the LightboxProvider so the
+ * "open viewer" callback can dispatch openAt directly through the context.
+ */
+function ImagesPageInner({
+  portfolioId,
+  allImages,
+  visibleImages,
+  folders,
+  selected,
+  onSelectFolder,
+  selection,
+  onToggleSelection,
+  onClearSelection,
+  onSelectAll,
+  onMoveSelected,
+  viewMode,
+  onViewModeChange,
+  sensors,
+  onDragEnd,
+  onLightboxEdit,
+  onLightboxDelete,
+}: ImagesPageInnerProps) {
+  const lightbox = useLightboxState();
+  const openViewer = (image: PortfolioImage) => {
+    const idx = visibleImages.findIndex((i) => i.id === image.id);
+    if (idx >= 0) lightbox?.openAt(idx);
+  };
+
+  return (
+    <>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <ImageList
+          portfolioId={portfolioId}
+          images={visibleImages}
+          allImages={allImages}
+          folders={folders}
+          selected={selected}
+          onSelectFolder={onSelectFolder}
+          selection={selection}
+          onToggleSelection={onToggleSelection}
+          onClearSelection={onClearSelection}
+          onSelectAll={onSelectAll}
+          onMoveSelected={onMoveSelected}
+          onOpenViewer={openViewer}
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+          emptyHint={
+            selected === 'all'
+              ? 'No images yet. Upload some above.'
+              : 'No images in this folder yet — drag some here from another view.'
+          }
+        />
+      </DndContext>
+      <Lightbox
+        topToolbar={
+          <DashboardLightboxToolbar onEdit={onLightboxEdit} onDelete={onLightboxDelete} />
+        }
+      />
+    </>
   );
 }

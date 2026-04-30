@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { getPortfolioByHandle, type PublicPortfolioResult } from '@/lib/api/portfolios';
 import { useSession } from '@/features/auth/useSession';
 import { TabbedTemplateHost } from './TabbedTemplateHost';
@@ -62,6 +63,8 @@ export function PublicPortfolioPage() {
     );
   }
 
+  const isOwner = session?.user?.id === state.data.portfolio.ownerId;
+
   return (
     <>
       {state.status === 'unpublished-owner' ? (
@@ -69,10 +72,20 @@ export function PublicPortfolioPage() {
           Unpublished — only you can see this. Toggle Publish in your dashboard to share it.
         </div>
       ) : null}
+      {isOwner ? (
+        <Link
+          to="/dashboard"
+          className="fixed right-4 top-4 z-50 inline-flex items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Back to dashboard
+        </Link>
+      ) : null}
       <ThemeScope
         themeId={state.data.portfolio.galleryThemeId}
         fontId={state.data.portfolio.fontId}
-        className="min-h-screen bg-background text-foreground"
+        fontScale={state.data.portfolio.fontScale}
+        className="min-h-screen text-foreground pb-32"
       >
         <TabbedTemplateHost
           portfolio={state.data.portfolio}

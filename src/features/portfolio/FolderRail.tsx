@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Pencil, Trash2, Check, X, FolderClosed, Images, Plus } from 'lucide-react';
+import { Check, FolderClosed, Images, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Dialog,
@@ -21,6 +14,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { ImageFolder, PortfolioImage } from '@/types';
@@ -32,7 +31,7 @@ import {
 
 export type FolderSelection = 'all' | string;
 
-interface FolderRailProps {
+interface FolderTabStripProps {
   portfolioId: string;
   folders: ImageFolder[];
   images: PortfolioImage[];
@@ -40,9 +39,20 @@ interface FolderRailProps {
   onSelect: (next: FolderSelection) => void;
 }
 
-export function FolderRail({ portfolioId, folders, images, selected, onSelect }: FolderRailProps) {
+/**
+ * Horizontal folder tab strip. Each tab is a click-to-filter selector AND a
+ * @dnd-kit drop target (id = `folder:${id}` or `folder:all`). The "+ Create
+ * folder" button sits at the right end of the strip.
+ *
+ * Folder reordering is intentionally not supported here in this pass — folder
+ * order falls back to the `position` returned by the API. Reordering inside a
+ * horizontal tab strip would compete with horizontal scroll; revisit if
+ * creators ask for it.
+ */
+export function FolderRail({ portfolioId, folders, images, selected, onSelect }: FolderTabStripProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [deleting, setDeleting] = useState<ImageFolder | null>(null);
+  const [renaming, setRenaming] = useState<ImageFolder | null>(null);
 
   const allCount = images.length;
   const folderCounts = new Map<string, number>();
@@ -51,52 +61,80 @@ export function FolderRail({ portfolioId, folders, images, selected, onSelect }:
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Folders</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <ul className="space-y-1">
-          <PseudoEntry
-            id="folder:all"
-            label="All images"
-            icon={<Images className="h-4 w-4" />}
-            count={allCount}
-            active={selected === 'all'}
-            onSelect={() => onSelect('all')}
+    <>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <FolderTab
+          dropId="folder:all"
+          icon={<Images className="h-4 w-4 shrink-0" />}
+          label="All images"
+          count={allCount}
+          active={selected === 'all'}
+          onSelect={() => onSelect('all')}
+        />
+        {folders.map((folder) => (
+          <FolderTab
+            key={folder.id}
+            dropId={`folder:${folder.id}`}
+            icon={<FolderClosed className="h-4 w-4 shrink-0" />}
+            label={folder.name}
+            count={folderCounts.get(folder.id) ?? 0}
+            active={selected === folder.id}
+            onSelect={() => onSelect(folder.id)}
+            menu={
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                    aria-label={`Folder actions for ${folder.name}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-base leading-none">⋮</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setRenaming(folder)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setDeleting(folder)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            }
           />
-        </ul>
-
-        <SortableContext items={folders.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-          <ul className="space-y-1">
-            {folders.map((folder) => (
-              <SortableFolderRailRow
-                key={folder.id}
-                folder={folder}
-                portfolioId={portfolioId}
-                count={folderCounts.get(folder.id) ?? 0}
-                active={selected === folder.id}
-                onSelect={() => onSelect(folder.id)}
-                onRequestDelete={() => setDeleting(folder)}
-              />
-            ))}
-          </ul>
-        </SortableContext>
-
-        <button
+        ))}
+        <Button
           type="button"
+          size="icon"
+          variant="ghost"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={() => setCreateOpen(true)}
-          className="flex w-full flex-col items-center gap-1 rounded-md border border-dashed py-3 text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+          aria-label="Create folder"
         >
           <Plus className="h-4 w-4" />
-          <span>Create new folder</span>
-        </button>
-      </CardContent>
+        </Button>
+      </div>
 
       {createOpen ? (
         <CreateFolderDialog
           portfolioId={portfolioId}
           onClose={() => setCreateOpen(false)}
+        />
+      ) : null}
+
+      {renaming ? (
+        <RenameFolderDialog
+          folder={renaming}
+          portfolioId={portfolioId}
+          onClose={() => setRenaming(null)}
         />
       ) : null}
 
@@ -111,198 +149,50 @@ export function FolderRail({ portfolioId, folders, images, selected, onSelect }:
           }}
         />
       ) : null}
-    </Card>
+    </>
   );
 }
 
-function PseudoEntry({
-  id,
-  label,
+function FolderTab({
+  dropId,
   icon,
+  label,
   count,
   active,
   onSelect,
+  menu,
 }: {
-  id: string;
-  label: string;
+  dropId: string;
   icon: React.ReactNode;
+  label: string;
   count: number;
   active: boolean;
   onSelect: () => void;
+  menu?: React.ReactNode;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
+  const { setNodeRef, isOver } = useDroppable({ id: dropId });
   return (
-    <li>
-      <button
-        ref={setNodeRef}
-        type="button"
-        onClick={onSelect}
-        className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          active
-            ? 'bg-accent text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-          isOver && 'ring-2 ring-primary',
-        )}
-      >
-        {icon}
-        <span className="flex-1 text-left truncate">{label}</span>
-        <span className="text-xs">{count}</span>
-      </button>
-    </li>
-  );
-}
-
-function SortableFolderRailRow({
-  folder,
-  portfolioId,
-  count,
-  active,
-  onSelect,
-  onRequestDelete,
-}: {
-  folder: ImageFolder;
-  portfolioId: string;
-  count: number;
-  active: boolean;
-  onSelect: () => void;
-  onRequestDelete: () => void;
-}) {
-  const sortable = useSortable({ id: folder.id, data: { type: 'folder' } });
-  const drop = useDroppable({ id: `folder:${folder.id}` });
-  const rename = useRenameFolder(portfolioId);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(folder.name);
-
-  const setRefs = (node: HTMLLIElement | null) => {
-    sortable.setNodeRef(node);
-    drop.setNodeRef(node);
-  };
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(sortable.transform),
-    transition: sortable.transition,
-    opacity: sortable.isDragging ? 0.6 : 1,
-  };
-
-  async function commitRename() {
-    const trimmed = draft.trim();
-    if (!trimmed || trimmed === folder.name) {
-      setEditing(false);
-      setDraft(folder.name);
-      return;
-    }
-    try {
-      await rename.mutateAsync({ id: folder.id, name: trimmed });
-      setEditing(false);
-    } catch (err) {
-      toast({
-        title: 'Could not rename folder',
-        description: err instanceof Error ? err.message : undefined,
-        variant: 'destructive',
-      });
-    }
-  }
-
-  return (
-    <li
-      ref={setRefs}
-      style={style}
+    <div
+      ref={setNodeRef}
       className={cn(
-        'group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors',
-        active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50',
-        drop.isOver && 'ring-2 ring-primary',
+        'group/tab flex h-9 max-w-[300px] shrink-0 items-center gap-2 rounded-md border px-3 text-sm transition-colors',
+        active
+          ? 'border-primary/40 bg-accent text-accent-foreground'
+          : 'border-input bg-background text-foreground hover:bg-accent/50',
+        isOver && 'ring-2 ring-primary',
       )}
     >
       <button
         type="button"
-        aria-label="Drag to reorder"
-        className="cursor-grab text-muted-foreground hover:text-foreground"
-        {...sortable.attributes}
-        {...sortable.listeners}
+        onClick={onSelect}
+        className="flex flex-1 items-center gap-2 truncate text-left"
       >
-        <GripVertical className="h-3.5 w-3.5" />
+        {icon}
+        <span className="truncate">{label}</span>
+        <span className="ml-1 shrink-0 text-sm font-semibold text-foreground/80">{count}</span>
       </button>
-
-      {editing ? (
-        <div className="flex flex-1 items-center gap-1">
-          <Input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                commitRename();
-              }
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                setEditing(false);
-                setDraft(folder.name);
-              }
-            }}
-            ref={(el) => el?.focus()}
-            maxLength={60}
-            className="h-7 text-sm"
-          />
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            onClick={commitRename}
-            disabled={rename.isPending}
-            aria-label="Save name"
-          >
-            <Check className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            onClick={() => {
-              setEditing(false);
-              setDraft(folder.name);
-            }}
-            aria-label="Cancel rename"
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={onSelect}
-            className="flex flex-1 items-center gap-2 truncate text-left"
-          >
-            <FolderClosed className="h-3.5 w-3.5 shrink-0" />
-            <span className="flex-1 truncate">{folder.name}</span>
-            <span className="text-xs text-muted-foreground">{count}</span>
-          </button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={() => setEditing(true)}
-            aria-label={`Rename ${folder.name}`}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={onRequestDelete}
-            aria-label={`Delete ${folder.name}`}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </>
-      )}
-    </li>
+      {menu}
+    </div>
   );
 }
 
@@ -369,6 +259,77 @@ function CreateFolderDialog({
             </Button>
             <Button type="submit" disabled={create.isPending || !name.trim()}>
               {create.isPending ? 'Creating…' : 'Create folder'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RenameFolderDialog({
+  folder,
+  portfolioId,
+  onClose,
+}: {
+  folder: ImageFolder;
+  portfolioId: string;
+  onClose: () => void;
+}) {
+  const rename = useRenameFolder(portfolioId);
+  const [name, setName] = useState(folder.name);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === folder.name) {
+      onClose();
+      return;
+    }
+    try {
+      await rename.mutateAsync({ id: folder.id, name: trimmed });
+      onClose();
+    } catch (err) {
+      toast({
+        title: 'Could not rename folder',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => (!o ? onClose() : null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename folder</DialogTitle>
+          <DialogDescription>Pick a new name for this folder.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="rename-folder-name">Name</Label>
+            <Input
+              id="rename-folder-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={60}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  onClose();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose} disabled={rename.isPending}>
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+            <Button type="submit" disabled={rename.isPending || !name.trim()}>
+              <Check className="mr-2 h-4 w-4" />
+              {rename.isPending ? 'Saving…' : 'Save'}
             </Button>
           </DialogFooter>
         </form>

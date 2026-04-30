@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { Portfolio, PortfolioImage } from '@/types';
 
-vi.mock('@/features/public-showcase/TemplateHost', () => ({
-  TemplateHost: () => <div data-testid="template-host" />,
+vi.mock('@/features/public-showcase/TabbedTemplateHost', () => ({
+  TabbedTemplateHost: () => <div data-testid="tabbed-template-host" />,
 }));
 
 // The preview component is exported only as part of TemplatesPage; we re-export
@@ -27,6 +27,7 @@ vi.mock('./queries', () => ({
     } as Portfolio,
   }),
   useImages: () => ({ data: [] as PortfolioImage[] }),
+  useFolders: () => ({ data: [] }),
   useUpdatePortfolio: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 

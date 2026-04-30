@@ -68,7 +68,7 @@ function makeImage(id: string, folderId: string | null): PortfolioImage {
 }
 
 describe('TabbedTemplateHost', () => {
-  it('renders tabs in tabs mode and excludes hidden folders', async () => {
+  it('renders an "All images" tab first, plus visible folders, and excludes hidden folders', async () => {
     const user = userEvent.setup();
     const portfolio = makePortfolio({ folderDisplayMode: 'tabs' });
     const folders = [
@@ -88,18 +88,22 @@ describe('TabbedTemplateHost', () => {
 
     // Hidden folder absent from strip.
     expect(screen.queryByRole('tab', { name: 'Private' })).not.toBeInTheDocument();
-    // Visible folders + Unfiled present.
+    // "All images" tab present and is the first tab; "Unfiled" is gone.
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs[0]).toHaveTextContent('All images');
+    expect(screen.queryByRole('tab', { name: 'Unfiled' })).not.toBeInTheDocument();
+    // Visible folders also present.
     expect(screen.getByRole('tab', { name: 'Studio' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Outdoor' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Unfiled' })).toBeInTheDocument();
 
-    // Default (first) tab is Studio. Template received its 2 images.
+    // Default (first) tab is "All images" — shows every visible image
+    // (folder-tagged + untagged), but never the hidden folder's image.
+    expect(screen.getByTestId('template-host').getAttribute('data-image-count')).toBe('4');
+
+    // Switching to a folder narrows the set.
+    await user.click(screen.getByRole('tab', { name: 'Studio' }));
     expect(screen.getByTestId('template-host').getAttribute('data-image-count')).toBe('2');
-
-    // Hidden folder's image never appears anywhere.
     await user.click(screen.getByRole('tab', { name: 'Outdoor' }));
-    expect(screen.getByTestId('template-host').getAttribute('data-image-count')).toBe('1');
-    await user.click(screen.getByRole('tab', { name: 'Unfiled' }));
     expect(screen.getByTestId('template-host').getAttribute('data-image-count')).toBe('1');
   });
 
@@ -114,7 +118,7 @@ describe('TabbedTemplateHost', () => {
     expect(screen.getByTestId('template-host').getAttribute('data-image-count')).toBe('2');
   });
 
-  it('falls back to flat when tabs requested but only Unfiled images exist', () => {
+  it('falls back to flat when tabs requested but no folder contains images', () => {
     const portfolio = makePortfolio({ folderDisplayMode: 'tabs' });
     const folders: ImageFolder[] = [];
     const images = [makeImage('a', null), makeImage('b', null)];

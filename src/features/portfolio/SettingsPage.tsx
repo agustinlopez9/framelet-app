@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -14,17 +14,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Check, Copy, ExternalLink, Pencil, X } from 'lucide-react';
+import { Check, Copy, ExternalLink, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { portfolioMetadataSchema, type PortfolioMetadataValues } from './schemas';
+import { portfolioMetadataSchema, SOCIAL_PLATFORMS, type PortfolioMetadataValues } from './schemas';
 import { useMyPortfolio, useUpdateHandle, useUpdatePortfolio } from './queries';
 import { isHandleAvailable, AuthError } from '@/lib/api/auth';
 import { handleSchema } from '@/features/auth/schemas';
 import { list as listThemes } from '@/themes';
 import { TwoToneSwatch } from '@/themes/TwoToneSwatch';
 import { fontCatalog } from '@/themes/fonts';
+import { platformMeta } from '@/features/public-showcase/PortfolioFooter';
+import type { SocialPlatform } from '@/types';
 
 export function SettingsPage() {
   const { data: portfolio } = useMyPortfolio();
@@ -38,8 +40,15 @@ export function SettingsPage() {
       bio: '',
       galleryThemeId: 'ocean-depths',
       fontId: 'default',
+      fontScale: 'regular',
       folderDisplayMode: 'flat',
+      socialLinks: [],
     },
+  });
+
+  const socialLinksField = useFieldArray({
+    control: form.control,
+    name: 'socialLinks',
   });
 
   useEffect(() => {
@@ -49,7 +58,9 @@ export function SettingsPage() {
         bio: portfolio.bio,
         galleryThemeId: portfolio.galleryThemeId,
         fontId: (portfolio.fontId as PortfolioMetadataValues['fontId']) ?? 'default',
+        fontScale: portfolio.fontScale ?? 'regular',
         folderDisplayMode: portfolio.folderDisplayMode ?? 'flat',
+        socialLinks: portfolio.socialLinks ?? [],
       });
     }
   }, [portfolio, form]);
@@ -255,6 +266,128 @@ export function SettingsPage() {
                       })}
                     </div>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="fontScale"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type scale</FormLabel>
+                  <FormDescription>
+                    Adjust the size of headings and body text on your public portfolio.
+                  </FormDescription>
+                  <FormControl>
+                    <div role="radiogroup" aria-label="Type scale" className="flex gap-2">
+                      {([
+                        { id: 'small', label: 'Small' },
+                        { id: 'regular', label: 'Regular' },
+                        { id: 'large', label: 'Large' },
+                      ] as const).map((opt) => {
+                        const selected = field.value === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => field.onChange(opt.id)}
+                            className={cn(
+                              'flex-1 rounded-lg border bg-card p-3 text-center text-sm font-medium transition-all',
+                              selected
+                                ? 'border-primary ring-2 ring-primary/30'
+                                : 'hover:border-primary/40',
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="socialLinks"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Social links</FormLabel>
+                  <FormDescription>
+                    Shown as icon links in the footer of your public portfolio. Pick a platform and
+                    paste the full URL (must start with <code>http://</code> or <code>https://</code>).
+                  </FormDescription>
+                  <div className="space-y-2">
+                    {socialLinksField.fields.map((linkField, idx) => (
+                      <div
+                        key={linkField.id}
+                        className="flex flex-col gap-2 rounded-md border bg-card p-3 sm:flex-row sm:items-start"
+                      >
+                        <FormField
+                          control={form.control}
+                          name={`socialLinks.${idx}.platform` as const}
+                          render={({ field: platformField }) => (
+                            <FormItem className="sm:w-44">
+                              <select
+                                value={platformField.value}
+                                onChange={(e) =>
+                                  platformField.onChange(e.target.value as SocialPlatform)
+                                }
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                aria-label={`Platform for link ${idx + 1}`}
+                              >
+                                {SOCIAL_PLATFORMS.map((platform) => (
+                                  <option key={platform} value={platform}>
+                                    {platformMeta(platform).label}
+                                  </option>
+                                ))}
+                              </select>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`socialLinks.${idx}.url` as const}
+                          render={({ field: urlField }) => (
+                            <FormItem className="flex-1">
+                              <Input
+                                type="url"
+                                placeholder="https://…"
+                                {...urlField}
+                                aria-label={`URL for link ${idx + 1}`}
+                              />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => socialLinksField.remove(idx)}
+                          aria-label={`Remove link ${idx + 1}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        socialLinksField.append({ platform: 'instagram', url: '' })
+                      }
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add link
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

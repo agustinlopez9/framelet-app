@@ -7,6 +7,25 @@ export interface User {
 
 export type FolderDisplayMode = 'tabs' | 'flat';
 
+export type FontScale = 'small' | 'regular' | 'large';
+
+export type SocialPlatform =
+  | 'instagram'
+  | 'facebook'
+  | 'twitter'
+  | 'youtube'
+  | 'tiktok'
+  | 'linkedin'
+  | 'pinterest'
+  | 'other';
+
+export interface SocialLink {
+  platform: SocialPlatform;
+  url: string;
+  /** Used as the accessible name when `platform === 'other'`. */
+  label?: string;
+}
+
 export interface Portfolio {
   id: string;
   ownerId: string;
@@ -21,6 +40,8 @@ export interface Portfolio {
   updatedAt: string;
   folderDisplayMode?: FolderDisplayMode;
   fontId?: string;
+  fontScale?: FontScale;
+  socialLinks?: SocialLink[];
 }
 
 export interface PortfolioImage {

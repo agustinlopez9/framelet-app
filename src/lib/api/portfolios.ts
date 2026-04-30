@@ -1,9 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import type {
   FolderDisplayMode,
+  FontScale,
   ImageFolder,
   Portfolio,
   PortfolioImage,
+  SocialLink,
   TemplateConfig,
 } from '@/types';
 import { listFolders } from './folders';
@@ -18,6 +20,8 @@ interface PortfolioRow {
   gallery_theme_id: string;
   folder_display_mode: FolderDisplayMode | null;
   font_id: string | null;
+  font_scale: FontScale | null;
+  social_links: SocialLink[] | null;
   published: boolean;
   created_at: string;
   updated_at: string;
@@ -63,6 +67,8 @@ function rowToPortfolio(row: PortfolioRow, handle: string): Portfolio {
     galleryThemeId: row.gallery_theme_id ?? 'ocean-depths',
     folderDisplayMode: row.folder_display_mode ?? 'flat',
     fontId: row.font_id ?? 'default',
+    fontScale: row.font_scale ?? 'regular',
+    socialLinks: row.social_links ?? [],
     published: row.published,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -152,6 +158,8 @@ export interface UpdatePortfolioInput {
   galleryThemeId?: string;
   folderDisplayMode?: FolderDisplayMode;
   fontId?: string;
+  fontScale?: FontScale;
+  socialLinks?: SocialLink[];
   published?: boolean;
 }
 
@@ -164,6 +172,8 @@ export async function updatePortfolio(id: string, patch: UpdatePortfolioInput): 
   if (patch.galleryThemeId !== undefined) update.gallery_theme_id = patch.galleryThemeId;
   if (patch.folderDisplayMode !== undefined) update.folder_display_mode = patch.folderDisplayMode;
   if (patch.fontId !== undefined) update.font_id = patch.fontId;
+  if (patch.fontScale !== undefined) update.font_scale = patch.fontScale;
+  if (patch.socialLinks !== undefined) update.social_links = patch.socialLinks;
   if (patch.published !== undefined) update.published = patch.published;
 
   const { data, error } = await supabase

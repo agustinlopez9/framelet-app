@@ -44,7 +44,7 @@ export function DashboardLayout() {
           </div>
         </div>
       </header>
-      <div className="container flex-1 py-8">
+      <div className="container flex-1 pb-32 pt-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[200px_1fr]">
           <aside className="space-y-1">
             {navItems.map(({ to, label, icon: Icon, end }) => (

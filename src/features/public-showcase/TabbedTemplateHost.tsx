@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ImageFolder, Portfolio, PortfolioImage } from '@/types';
 import { TemplateHost } from './TemplateHost';
+import { PortfolioFooter } from './PortfolioFooter';
 
 interface TabbedTemplateHostProps {
   portfolio: Portfolio;
@@ -10,14 +11,15 @@ interface TabbedTemplateHostProps {
   inPreview?: boolean;
 }
 
-const UNFILED_TAB_ID = '__unfiled__';
+const ALL_TAB_ID = '__all__';
 
 /**
  * Wraps {@link TemplateHost} with a folder-aware tab strip.
  *
- * - In `tabs` mode: shows a tab per non-hidden folder, plus an "Unfiled" tab
- *   when unfiled images exist. Each tab swaps the image set passed to the
- *   active template.
+ * - Always renders the portfolio header (title + bio) above the tabs so the
+ *   tab strip reads as section navigation, not a top-of-page control.
+ * - In `tabs` mode: shows an "All images" tab plus a tab per non-hidden folder
+ *   that contains images. Each tab swaps the image set passed to the template.
  * - In `flat` mode (or when no non-hidden folders contain images): renders all
  *   non-hidden images in a single template instance with no tab strip.
  */
@@ -51,11 +53,6 @@ export function TabbedTemplateHost({
     return set;
   }, [visibleImages, visibleFolderIds]);
 
-  const unfiledImages = useMemo(
-    () => visibleImages.filter((img) => !img.folderId),
-    [visibleImages],
-  );
-
   // Decide whether to show tabs at all. Tabs mode requires at least one
   // non-hidden folder that contains images; otherwise we fall through to flat.
   const tabsModeRequested = (portfolio.folderDisplayMode ?? 'flat') === 'tabs';
@@ -64,27 +61,39 @@ export function TabbedTemplateHost({
 
   const tabs = useMemo(() => {
     if (!showTabs) return [];
-    const list = usableFolders.map((f) => ({ id: f.id, label: f.name }));
-    if (unfiledImages.length > 0) list.push({ id: UNFILED_TAB_ID, label: 'Unfiled' });
+    const list: { id: string; label: string }[] = [{ id: ALL_TAB_ID, label: 'All images' }];
+    for (const f of usableFolders) list.push({ id: f.id, label: f.name });
     return list;
-  }, [showTabs, usableFolders, unfiledImages.length]);
+  }, [showTabs, usableFolders]);
 
-  const [activeTab, setActiveTab] = useState<string>(() => tabs[0]?.id ?? '');
+  const [activeTab, setActiveTab] = useState<string>(() => tabs[0]?.id ?? ALL_TAB_ID);
 
   if (!showTabs) {
-    return <TemplateHost portfolio={portfolio} images={visibleImages} inPreview={inPreview} />;
+    return (
+      <>
+        <PortfolioHeader portfolio={portfolio} />
+        <TemplateHost
+          portfolio={portfolio}
+          images={visibleImages}
+          inPreview={inPreview}
+          hideHeader
+        />
+        {inPreview ? null : <PortfolioFooter portfolio={portfolio} />}
+      </>
+    );
   }
 
   const current = tabs.find((t) => t.id === activeTab) ?? tabs[0];
   const currentImages =
-    current.id === UNFILED_TAB_ID
-      ? unfiledImages
+    current.id === ALL_TAB_ID
+      ? visibleImages
       : visibleImages.filter((img) => img.folderId === current.id);
 
   return (
-    <div>
-      <div className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-4">
+    <>
+      <PortfolioHeader portfolio={portfolio} />
+      <div className="mx-auto mb-8 mt-6 max-w-6xl px-4">
+        <div className="rounded-md border border-border bg-card/50 px-4 shadow-sm">
           <Tabs value={current.id} onValueChange={setActiveTab}>
             <TabsList className="h-12 bg-transparent">
               {tabs.map((tab) => (
@@ -96,7 +105,26 @@ export function TabbedTemplateHost({
           </Tabs>
         </div>
       </div>
-      <TemplateHost portfolio={portfolio} images={currentImages} inPreview={inPreview} />
-    </div>
+      <TemplateHost
+        portfolio={portfolio}
+        images={currentImages}
+        inPreview={inPreview}
+        hideHeader
+      />
+      {inPreview ? null : <PortfolioFooter portfolio={portfolio} />}
+    </>
+  );
+}
+
+function PortfolioHeader({ portfolio }: { portfolio: Portfolio }) {
+  return (
+    <header className="mx-auto max-w-6xl px-4 pb-10 pt-16 text-center">
+      <h1 className="text-4xl font-semibold tracking-tight">
+        {portfolio.title || portfolio.handle}
+      </h1>
+      {portfolio.bio ? (
+        <p className="mx-auto mt-3 max-w-2xl text-lg text-muted-foreground">{portfolio.bio}</p>
+      ) : null}
+    </header>
   );
 }

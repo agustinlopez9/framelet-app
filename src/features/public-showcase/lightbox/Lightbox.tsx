@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Maximize, Minimize, Pause, Play, X } from 'lucide-react';
 import { useLightboxState } from './LightboxContext';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,13 @@ const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 const ZOOM_STEP = 0.2;
 
-export function Lightbox() {
+interface LightboxProps {
+  /** Extra content rendered along the top edge (left of the built-in
+   * controls). Used by the dashboard to expose Edit/Delete actions. */
+  topToolbar?: ReactNode;
+}
+
+export function Lightbox({ topToolbar }: LightboxProps = {}) {
   const ctx = useLightboxState();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -206,6 +212,10 @@ export function Lightbox() {
         if (e.target === e.currentTarget) ctx.close();
       }}
     >
+      {topToolbar ? (
+        <div className="absolute left-4 top-4 z-10 flex items-center gap-2">{topToolbar}</div>
+      ) : null}
+
       {/* Top-right controls */}
       <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
         <button

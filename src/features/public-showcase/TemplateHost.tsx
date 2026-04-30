@@ -16,6 +16,7 @@ interface TemplateHostProps {
   // entirely — images don't open and the (transform-broken) Fullscreen API is
   // unreachable. Templates render images as non-interactive figures.
   inPreview?: boolean;
+  hideHeader?: boolean;
 }
 
 function TemplateLoadingFallback() {
@@ -31,7 +32,7 @@ function TemplateLoadingFallback() {
   );
 }
 
-export function TemplateHost({ portfolio, images, templateIdOverride, inPreview = false }: TemplateHostProps) {
+export function TemplateHost({ portfolio, images, templateIdOverride, inPreview = false, hideHeader = false }: TemplateHostProps) {
   const requestedId = templateIdOverride ?? portfolio.templateId;
   const resolved: Template = useMemo(() => {
     const t = get(requestedId);
@@ -49,6 +50,7 @@ export function TemplateHost({ portfolio, images, templateIdOverride, inPreview 
     images: PortfolioImage[];
     config: Record<string, unknown>;
     inPreview?: boolean;
+    hideHeader?: boolean;
   }> | null>(null);
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export function TemplateHost({ portfolio, images, templateIdOverride, inPreview 
         images={images}
         config={portfolio.templateConfig}
         inPreview={inPreview}
+        hideHeader={hideHeader}
       />
     </Suspense>
   );

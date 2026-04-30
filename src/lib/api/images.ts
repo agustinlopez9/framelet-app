@@ -54,8 +54,15 @@ export interface UploadImageOptions {
   ownerId: string;
   portfolioId: string;
   file: File;
+  title?: string;
   onProgress?: (fraction: number) => void;
   signal?: AbortSignal;
+}
+
+export function deriveTitleFromFilename(filename: string): string {
+  const lastDot = filename.lastIndexOf('.');
+  const base = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+  return base.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 export class UploadValidationError extends Error {
@@ -116,6 +123,7 @@ export async function uploadImage(opts: UploadImageOptions): Promise<PortfolioIm
     .maybeSingle<{ position: number }>();
   const nextPosition = (posData?.position ?? -1) + 1;
 
+  const title = opts.title ?? deriveTitleFromFilename(opts.file.name);
   const { data, error } = await supabase
     .from('images')
     .insert({
@@ -123,6 +131,7 @@ export async function uploadImage(opts: UploadImageOptions): Promise<PortfolioIm
       portfolio_id: opts.portfolioId,
       storage_path: path,
       position: nextPosition,
+      title,
     })
     .select('*')
     .single<ImageRow>();

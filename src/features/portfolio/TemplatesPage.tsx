@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useImages, useMyPortfolio, useUpdatePortfolio } from './queries';
+import { useFolders, useImages, useMyPortfolio, useUpdatePortfolio } from './queries';
 import { ensureRegistered, list as listTemplates } from '@/templates';
-import { TemplateHost } from '@/features/public-showcase/TemplateHost';
+import { TabbedTemplateHost } from '@/features/public-showcase/TabbedTemplateHost';
 import { toast } from '@/hooks/use-toast';
 import { Check, ExternalLink } from 'lucide-react';
-import type { Portfolio, PortfolioImage } from '@/types';
+import type { ImageFolder, Portfolio, PortfolioImage } from '@/types';
 
 ensureRegistered();
 
@@ -17,10 +17,11 @@ const PREVIEW_DEFAULT_CONTENT_HEIGHT = 720;
 interface TemplatePreviewProps {
   portfolio: Portfolio;
   images: PortfolioImage[];
+  folders: ImageFolder[];
   templateIdOverride: string;
 }
 
-function TemplatePreview({ portfolio, images, templateIdOverride }: TemplatePreviewProps) {
+function TemplatePreview({ portfolio, images, folders, templateIdOverride }: TemplatePreviewProps) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
@@ -83,10 +84,10 @@ function TemplatePreview({ portfolio, images, templateIdOverride }: TemplatePrev
             transformOrigin: 'top left',
           }}
         >
-          <TemplateHost
-            portfolio={portfolio}
+          <TabbedTemplateHost
+            portfolio={{ ...portfolio, templateId: templateIdOverride }}
             images={images}
-            templateIdOverride={templateIdOverride}
+            folders={folders}
             inPreview
           />
         </div>
@@ -98,6 +99,7 @@ function TemplatePreview({ portfolio, images, templateIdOverride }: TemplatePrev
 export function TemplatesPage() {
   const { data: portfolio } = useMyPortfolio();
   const { data: images } = useImages(portfolio?.id);
+  const { data: folders = [] } = useFolders(portfolio?.id);
   const update = useUpdatePortfolio();
   const templates = listTemplates();
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -194,6 +196,7 @@ export function TemplatesPage() {
           <TemplatePreview
             portfolio={portfolio}
             images={images ?? []}
+            folders={folders}
             templateIdOverride={previewing}
           />
         </CardContent>
