@@ -1,5 +1,12 @@
 import { supabase } from '@/lib/supabase';
-import type { Portfolio, PortfolioImage, TemplateConfig } from '@/types';
+import type {
+  FolderDisplayMode,
+  ImageFolder,
+  Portfolio,
+  PortfolioImage,
+  TemplateConfig,
+} from '@/types';
+import { listFolders } from './folders';
 
 interface PortfolioRow {
   id: string;
@@ -8,6 +15,9 @@ interface PortfolioRow {
   bio: string;
   template_id: string;
   template_config: TemplateConfig;
+  gallery_theme_id: string;
+  folder_display_mode: FolderDisplayMode | null;
+  font_id: string | null;
   published: boolean;
   created_at: string;
   updated_at: string;
@@ -30,6 +40,7 @@ interface ImageRow {
   position: number;
   width: number | null;
   height: number | null;
+  folder_id: string | null;
   created_at: string;
 }
 
@@ -49,6 +60,9 @@ function rowToPortfolio(row: PortfolioRow, handle: string): Portfolio {
     bio: row.bio,
     templateId: row.template_id,
     templateConfig: row.template_config,
+    galleryThemeId: row.gallery_theme_id ?? 'ocean-depths',
+    folderDisplayMode: row.folder_display_mode ?? 'flat',
+    fontId: row.font_id ?? 'default',
     published: row.published,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -67,6 +81,7 @@ function rowToImage(row: ImageRow): PortfolioImage {
     position: row.position,
     width: row.width,
     height: row.height,
+    folderId: row.folder_id ?? null,
     createdAt: row.created_at,
   };
 }
@@ -95,6 +110,7 @@ export async function getMyPortfolio(): Promise<Portfolio | null> {
 export interface PublicPortfolioResult {
   portfolio: Portfolio;
   images: PortfolioImage[];
+  folders: ImageFolder[];
 }
 
 export async function getPortfolioByHandle(handle: string): Promise<PublicPortfolioResult | null> {
@@ -112,15 +128,19 @@ export async function getPortfolioByHandle(handle: string): Promise<PublicPortfo
     .maybeSingle<PortfolioRow>();
   if (!portfolio) return null;
 
-  const { data: images } = await supabase
-    .from('images')
-    .select('*')
-    .eq('portfolio_id', portfolio.id)
-    .order('position', { ascending: true });
+  const [imagesResult, folders] = await Promise.all([
+    supabase
+      .from('images')
+      .select('*')
+      .eq('portfolio_id', portfolio.id)
+      .order('position', { ascending: true }),
+    listFolders(portfolio.id),
+  ]);
 
   return {
     portfolio: rowToPortfolio(portfolio, user.handle),
-    images: (images ?? []).map(rowToImage),
+    images: ((imagesResult.data as ImageRow[] | null) ?? []).map(rowToImage),
+    folders,
   };
 }
 
@@ -129,6 +149,9 @@ export interface UpdatePortfolioInput {
   bio?: string;
   templateId?: string;
   templateConfig?: TemplateConfig;
+  galleryThemeId?: string;
+  folderDisplayMode?: FolderDisplayMode;
+  fontId?: string;
   published?: boolean;
 }
 
@@ -138,6 +161,9 @@ export async function updatePortfolio(id: string, patch: UpdatePortfolioInput): 
   if (patch.bio !== undefined) update.bio = patch.bio;
   if (patch.templateId !== undefined) update.template_id = patch.templateId;
   if (patch.templateConfig !== undefined) update.template_config = patch.templateConfig;
+  if (patch.galleryThemeId !== undefined) update.gallery_theme_id = patch.galleryThemeId;
+  if (patch.folderDisplayMode !== undefined) update.folder_display_mode = patch.folderDisplayMode;
+  if (patch.fontId !== undefined) update.font_id = patch.fontId;
   if (patch.published !== undefined) update.published = patch.published;
 
   const { data, error } = await supabase

@@ -32,7 +32,7 @@ function SimpleGrid({ portfolio, images }: TemplateProps) {
                 className="w-full"
               />
               {image.title ? (
-                <figcaption className="border-t bg-white/60 p-2 text-sm text-muted-foreground">
+                <figcaption className="border-t bg-card/60 p-2 text-sm text-muted-foreground">
                   {image.title}
                 </figcaption>
               ) : null}

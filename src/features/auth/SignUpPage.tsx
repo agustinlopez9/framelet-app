@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { signUpSchema, type SignUpValues } from './schemas';
-import { signUp, AuthError } from '@/lib/api/auth';
+import { signUp, signInWithGoogle, AuthError } from '@/lib/api/auth';
 
 export function SignUpPage() {
   const navigate = useNavigate();
@@ -45,6 +45,18 @@ export function SignUpPage() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onGoogle() {
+    setGlobalError(null);
+    try {
+      const next = params.get('next') ?? '/dashboard';
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+      await signInWithGoogle(redirectTo);
+    } catch (err) {
+      if (err instanceof AuthError) setGlobalError(err.message);
+      else setGlobalError('Could not start Google sign-up.');
     }
   }
 
@@ -114,6 +126,20 @@ export function SignUpPage() {
               </Button>
             </form>
           </Form>
+          <div className="mt-4 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 w-full"
+            onClick={onGoogle}
+            disabled={submitting}
+          >
+            Continue with Google
+          </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link className="underline" to="/login">

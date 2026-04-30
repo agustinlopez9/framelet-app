@@ -2,12 +2,13 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useSession } from '@/features/auth/useSession';
 import { signOut } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Image as ImageIcon, LayoutGrid, Settings, Upload } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
+import { LogOut, Home, Images, LayoutGrid, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { to: '/dashboard', label: 'Overview', icon: ImageIcon, end: true },
-  { to: '/dashboard/upload', label: 'Upload', icon: Upload, end: false },
+  { to: '/dashboard', label: 'Overview', icon: Home, end: true },
+  { to: '/dashboard/images', label: 'Images', icon: Images, end: false },
   { to: '/dashboard/templates', label: 'Templates', icon: LayoutGrid, end: false },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings, end: false },
 ];
@@ -25,8 +26,12 @@ export function DashboardLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container flex h-14 items-center justify-between">
-          <Link to="/" className="font-semibold tracking-tight">
-            framelet
+          <Link
+            to="/"
+            className="flex items-center gap-2 font-semibold tracking-tight"
+          >
+            <Logo className="h-5 w-5 text-primary" />
+            <span>Framelet</span>
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground md:inline">

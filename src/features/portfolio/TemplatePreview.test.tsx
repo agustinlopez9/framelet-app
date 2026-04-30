@@ -20,6 +20,7 @@ vi.mock('./queries', () => ({
       bio: '',
       templateId: 'simple-grid',
       templateConfig: {},
+      galleryThemeId: 'ocean-depths',
       published: true,
       createdAt: '',
       updatedAt: '',

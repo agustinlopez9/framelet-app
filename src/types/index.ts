@@ -5,6 +5,8 @@ export interface User {
   createdAt: string;
 }
 
+export type FolderDisplayMode = 'tabs' | 'flat';
+
 export interface Portfolio {
   id: string;
   ownerId: string;
@@ -13,9 +15,12 @@ export interface Portfolio {
   bio: string;
   templateId: string;
   templateConfig: TemplateConfig;
+  galleryThemeId: string;
   published: boolean;
   createdAt: string;
   updatedAt: string;
+  folderDisplayMode?: FolderDisplayMode;
+  fontId?: string;
 }
 
 export interface PortfolioImage {
@@ -29,6 +34,16 @@ export interface PortfolioImage {
   position: number;
   width: number | null;
   height: number | null;
+  createdAt: string;
+  folderId?: string | null;
+}
+
+export interface ImageFolder {
+  id: string;
+  portfolioId: string;
+  name: string;
+  position: number;
+  hidden: boolean;
   createdAt: string;
 }
 

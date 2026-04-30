@@ -10,7 +10,7 @@ interface FigureProps {
 
 export function Figure({ children, className, onClick, ariaLabel }: FigureProps) {
   const interactive = Boolean(onClick);
-  const base = 'relative overflow-hidden rounded-lg shadow-sm ring-1 ring-black/5 bg-white';
+  const base = 'relative overflow-hidden rounded-lg shadow-sm ring-1 ring-foreground/10 bg-card';
 
   if (!interactive) {
     return <figure className={cn(base, className)}>{children}</figure>;

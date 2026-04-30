@@ -15,6 +15,7 @@ interface ImageRow {
   position: number;
   width: number | null;
   height: number | null;
+  folder_id: string | null;
   created_at: string;
 }
 
@@ -34,6 +35,7 @@ function rowToImage(row: ImageRow): PortfolioImage {
     position: row.position,
     width: row.width,
     height: row.height,
+    folderId: row.folder_id ?? null,
     createdAt: row.created_at,
   };
 }
@@ -166,6 +168,7 @@ export interface UpdateImageInput {
   title?: string;
   description?: string;
   altText?: string;
+  folderId?: string | null;
 }
 
 export async function updateImage(id: string, patch: UpdateImageInput): Promise<PortfolioImage> {
@@ -173,6 +176,7 @@ export async function updateImage(id: string, patch: UpdateImageInput): Promise<
   if (patch.title !== undefined) update.title = patch.title;
   if (patch.description !== undefined) update.description = patch.description;
   if (patch.altText !== undefined) update.alt_text = patch.altText;
+  if (patch.folderId !== undefined) update.folder_id = patch.folderId;
   const { data, error } = await supabase
     .from('images')
     .update(update)
@@ -181,6 +185,13 @@ export async function updateImage(id: string, patch: UpdateImageInput): Promise<
     .single<ImageRow>();
   if (error || !data) throw new Error(error?.message ?? 'Failed to update image');
   return rowToImage(data);
+}
+
+export async function assignImageFolder(
+  imageId: string,
+  folderId: string | null,
+): Promise<PortfolioImage> {
+  return updateImage(imageId, { folderId });
 }
 
 export async function deleteImage(image: PortfolioImage): Promise<void> {

@@ -50,7 +50,7 @@ export default function Gallery3D({ portfolio, images }: TemplateProps) {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-stone-50 text-stone-900">
+    <div className="relative h-screen w-full overflow-hidden bg-background text-foreground">
       <header className="pointer-events-none absolute left-0 right-0 top-0 z-10 px-6 pt-12 text-center">
         <h1 className="text-4xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
         {portfolio.bio ? (
@@ -138,18 +138,18 @@ export default function Gallery3D({ portfolio, images }: TemplateProps) {
           type="button"
           aria-label="Previous image"
           onClick={goPrev}
-          className="rounded-full bg-white/70 px-4 py-2 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
+          className="rounded-full bg-card/80 px-4 py-2 text-card-foreground shadow-sm ring-1 ring-foreground/10 backdrop-blur transition hover:bg-card"
         >
           ←
         </button>
-        <span className="tabular-nums text-stone-500">
+        <span className="tabular-nums text-muted-foreground">
           {active + 1} / {images.length}
         </span>
         <button
           type="button"
           aria-label="Next image"
           onClick={goNext}
-          className="rounded-full bg-white/70 px-4 py-2 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
+          className="rounded-full bg-card/80 px-4 py-2 text-card-foreground shadow-sm ring-1 ring-foreground/10 backdrop-blur transition hover:bg-card"
         >
           →
         </button>

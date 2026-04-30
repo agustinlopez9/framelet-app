@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink } from 'lucide-react';
 import { get as getTemplate } from '@/templates';
 
 export function DashboardOverview() {
@@ -23,7 +23,8 @@ export function DashboardOverview() {
   }
 
   const template = getTemplate(portfolio.templateId);
-  const publicUrl = `/u/${portfolio.handle}`;
+  const publicPath = `/u/${portfolio.handle}`;
+  const displayUrl = `framelet.app${publicPath}`;
 
   async function togglePublished(next: boolean) {
     if (!portfolio) return;
@@ -39,12 +40,23 @@ export function DashboardOverview() {
     }
   }
 
+  async function copyUrl() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${publicPath}`);
+      toast({ title: 'Link copied' });
+    } catch {
+      toast({ title: 'Could not copy link', variant: 'destructive' });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{portfolio.title || portfolio.handle}</CardTitle>
-          <CardDescription>{portfolio.bio || 'Add a short bio in Settings.'}</CardDescription>
+          <CardTitle>Welcome back</CardTitle>
+          <CardDescription>
+            Manage your portfolio, share your link, and toggle publish.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
@@ -72,10 +84,14 @@ export function DashboardOverview() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <code className="rounded bg-muted px-2 py-1 text-sm">{publicUrl}</code>
+          <div className="flex flex-wrap items-center gap-3">
+            <code className="rounded bg-muted px-2 py-1 text-sm">{displayUrl}</code>
+            <Button type="button" variant="outline" size="sm" onClick={copyUrl}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy
+            </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to={publicUrl} target="_blank" rel="noreferrer">
+              <Link to={publicPath} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Open
               </Link>

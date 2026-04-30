@@ -15,6 +15,7 @@ function makePortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
     bio: 'Editorial fashion.',
     templateId: 'simple-grid',
     templateConfig: {},
+    galleryThemeId: 'ocean-depths',
     published: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

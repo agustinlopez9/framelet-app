@@ -17,7 +17,7 @@ export function OpenInViewerButton({ index = 0 }: OpenInViewerButtonProps) {
       onClick={() => openAt(index)}
       // top-[4.5rem] = navbar (h-14 = 3.5rem) + 1rem gap. Pinned to the viewport
       // so it stays visible while scrolling templates that grow tall.
-      className="fixed right-4 top-[4.5rem] z-30 rounded-full bg-white/70 p-2 text-stone-800 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
+      className="fixed right-4 top-[4.5rem] z-30 rounded-full bg-card/80 p-2 text-card-foreground shadow-sm ring-1 ring-foreground/10 backdrop-blur transition hover:bg-card"
     >
       <Maximize className="h-5 w-5" />
     </button>

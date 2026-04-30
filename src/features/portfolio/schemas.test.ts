@@ -3,18 +3,18 @@ import { imageMetadataSchema, portfolioMetadataSchema } from './schemas';
 
 describe('portfolioMetadataSchema', () => {
   it('rejects an empty title', () => {
-    expect(portfolioMetadataSchema.safeParse({ title: '', bio: '' }).success).toBe(false);
+    expect(portfolioMetadataSchema.safeParse({ title: '', bio: '', galleryThemeId: 'ocean-depths' }).success).toBe(false);
   });
   it('rejects a title longer than 80 chars', () => {
-    expect(portfolioMetadataSchema.safeParse({ title: 'x'.repeat(81), bio: '' }).success).toBe(false);
+    expect(portfolioMetadataSchema.safeParse({ title: 'x'.repeat(81), bio: '', galleryThemeId: 'ocean-depths' }).success).toBe(false);
   });
   it('rejects a bio longer than 500 chars', () => {
-    expect(portfolioMetadataSchema.safeParse({ title: 'ok', bio: 'b'.repeat(501) }).success).toBe(
+    expect(portfolioMetadataSchema.safeParse({ title: 'ok', bio: 'b'.repeat(501), galleryThemeId: 'ocean-depths' }).success).toBe(
       false,
     );
   });
   it('accepts valid input', () => {
-    expect(portfolioMetadataSchema.safeParse({ title: 'My work', bio: 'About me' }).success).toBe(
+    expect(portfolioMetadataSchema.safeParse({ title: 'My work', bio: 'About me', galleryThemeId: 'ocean-depths' }).success).toBe(
       true,
     );
   });

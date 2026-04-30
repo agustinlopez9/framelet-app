@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPortfolioByHandle, type PublicPortfolioResult } from '@/lib/api/portfolios';
 import { useSession } from '@/features/auth/useSession';
-import { TemplateHost } from './TemplateHost';
+import { TabbedTemplateHost } from './TabbedTemplateHost';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ThemeScope } from '@/themes/ThemeScope';
 
 type LoadState =
   | { status: 'loading' }
@@ -68,9 +69,17 @@ export function PublicPortfolioPage() {
           Unpublished — only you can see this. Toggle Publish in your dashboard to share it.
         </div>
       ) : null}
-      <div className="min-h-screen">
-        <TemplateHost portfolio={state.data.portfolio} images={state.data.images} />
-      </div>
+      <ThemeScope
+        themeId={state.data.portfolio.galleryThemeId}
+        fontId={state.data.portfolio.fontId}
+        className="min-h-screen bg-background text-foreground"
+      >
+        <TabbedTemplateHost
+          portfolio={state.data.portfolio}
+          images={state.data.images}
+          folders={state.data.folders}
+        />
+      </ThemeScope>
     </>
   );
 }

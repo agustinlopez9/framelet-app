@@ -64,3 +64,22 @@ export async function isHandleAvailable(handle: string) {
   if (error) throw new AuthError(error.message);
   return data === null;
 }
+
+export async function signInWithGoogle(redirectTo: string) {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo },
+  });
+  if (error) throw new AuthError(error.message);
+  return data;
+}
+
+/**
+ * Persist the chosen handle on the auth user's metadata. Used by the OAuth
+ * onboarding flow when the federated user did not pick a handle at signup.
+ */
+export async function setMyHandle(handle: string) {
+  const normalized = handle.toLowerCase();
+  const { error } = await supabase.auth.updateUser({ data: { handle: normalized } });
+  if (error) throw new AuthError(error.message);
+}

@@ -3,10 +3,13 @@ import { PublicLayout } from './PublicLayout';
 import { DashboardLayout } from './DashboardLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
+import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage';
+import { OnboardingHandlePage } from '@/features/auth/OnboardingHandlePage';
 import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth';
+import { RequireHandle } from '@/features/auth/RequireHandle';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { DashboardPage } from '@/features/portfolio/DashboardPage';
-import { UploadPage } from '@/features/portfolio/UploadPage';
+import { ImagesPage } from '@/features/portfolio/ImagesPage';
 import { TemplatesPage } from '@/features/portfolio/TemplatesPage';
 import { SettingsPage } from '@/features/portfolio/SettingsPage';
 import { PublicPortfolioPage } from '@/features/public-showcase/PublicPortfolioPage';
@@ -26,16 +29,27 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
     element: <RequireAuth />,
     children: [
+      { path: '/onboarding/handle', element: <OnboardingHandlePage /> },
       {
-        element: <DashboardLayout />,
+        element: <RequireHandle />,
         children: [
-          { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/dashboard/upload', element: <UploadPage /> },
-          { path: '/dashboard/templates', element: <TemplatesPage /> },
-          { path: '/dashboard/settings', element: <SettingsPage /> },
+          {
+            element: <DashboardLayout />,
+            children: [
+              { path: '/dashboard', element: <DashboardPage /> },
+              { path: '/dashboard/images', element: <ImagesPage /> },
+              {
+                path: '/dashboard/upload',
+                element: <Navigate to="/dashboard/images" replace />,
+              },
+              { path: '/dashboard/templates', element: <TemplatesPage /> },
+              { path: '/dashboard/settings', element: <SettingsPage /> },
+            ],
+          },
         ],
       },
     ],
