@@ -19,19 +19,12 @@ interface PortfolioRow {
   template_config: TemplateConfig;
   gallery_theme_id: string;
   folder_display_mode: FolderDisplayMode | null;
-  font_id: string | null;
-  font_scale: FontScale | null;
-  social_links: SocialLink[] | null;
+  font_id: string;
+  font_scale: FontScale;
+  social_links: SocialLink[];
   published: boolean;
   created_at: string;
   updated_at: string;
-}
-
-interface UserRow {
-  id: string;
-  email: string;
-  handle: string;
-  created_at: string;
 }
 
 interface ImageRow {
@@ -66,9 +59,9 @@ function rowToPortfolio(row: PortfolioRow, handle: string): Portfolio {
     templateConfig: row.template_config,
     galleryThemeId: row.gallery_theme_id ?? 'ocean-depths',
     folderDisplayMode: row.folder_display_mode ?? 'flat',
-    fontId: row.font_id ?? 'default',
-    fontScale: row.font_scale ?? 'regular',
-    socialLinks: row.social_links ?? [],
+    fontId: row.font_id,
+    fontScale: row.font_scale,
+    socialLinks: row.social_links,
     published: row.published,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -96,21 +89,14 @@ export async function getMyPortfolio(): Promise<Portfolio | null> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;
 
-  const { data: user, error: userErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', auth.user.id)
-    .single<UserRow>();
-  if (userErr || !user) return null;
-
-  const { data: portfolio, error } = await supabase
+  const { data: row, error } = await supabase
     .from('portfolios')
-    .select('*')
-    .eq('owner_id', user.id)
-    .single<PortfolioRow>();
-  if (error || !portfolio) return null;
+    .select('*, users!owner_id(handle)')
+    .eq('owner_id', auth.user.id)
+    .single<PortfolioRow & { users: { handle: string } }>();
+  if (error || !row) return null;
 
-  return rowToPortfolio(portfolio, user.handle);
+  return rowToPortfolio(row, row.users.handle);
 }
 
 export interface PublicPortfolioResult {
@@ -120,31 +106,24 @@ export interface PublicPortfolioResult {
 }
 
 export async function getPortfolioByHandle(handle: string): Promise<PublicPortfolioResult | null> {
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('handle', handle.toLowerCase())
-    .maybeSingle<UserRow>();
-  if (!user) return null;
-
-  const { data: portfolio } = await supabase
+  const { data: row } = await supabase
     .from('portfolios')
-    .select('*')
-    .eq('owner_id', user.id)
-    .maybeSingle<PortfolioRow>();
-  if (!portfolio) return null;
+    .select('*, users!inner(handle)')
+    .eq('users.handle', handle.toLowerCase())
+    .maybeSingle<PortfolioRow & { users: { handle: string } }>();
+  if (!row) return null;
 
   const [imagesResult, folders] = await Promise.all([
     supabase
       .from('images')
       .select('*')
-      .eq('portfolio_id', portfolio.id)
+      .eq('portfolio_id', row.id)
       .order('position', { ascending: true }),
-    listFolders(portfolio.id),
+    listFolders(row.id),
   ]);
 
   return {
-    portfolio: rowToPortfolio(portfolio, user.handle),
+    portfolio: rowToPortfolio(row, row.users.handle),
     images: ((imagesResult.data as ImageRow[] | null) ?? []).map(rowToImage),
     folders,
   };

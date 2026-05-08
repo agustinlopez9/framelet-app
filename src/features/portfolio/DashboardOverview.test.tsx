@@ -37,6 +37,8 @@ function makePortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
     updatedAt: '',
     folderDisplayMode: 'flat',
     fontId: 'default',
+    fontScale: 'regular',
+    socialLinks: [],
     ...overrides,
   };
 }

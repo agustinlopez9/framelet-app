@@ -80,14 +80,12 @@ export async function renameFolder(id: string, name: string): Promise<ImageFolde
   return rowToFolder(data);
 }
 
-export async function reorderFolders(ordered: ImageFolder[]): Promise<void> {
-  const updates = ordered.map((folder, idx) =>
-    supabase.from('image_folders').update({ position: idx }).eq('id', folder.id),
-  );
-  const results = await Promise.all(updates);
-  for (const r of results) {
-    if (r.error) throw new Error(r.error.message);
-  }
+export async function reorderFolders(ordered: ImageFolder[], portfolioId: string): Promise<void> {
+  const { error } = await supabase.rpc('reorder_folders', {
+    ids: ordered.map((f) => f.id),
+    portfolio_id_in: portfolioId,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function setFolderHidden(id: string, hidden: boolean): Promise<ImageFolder> {

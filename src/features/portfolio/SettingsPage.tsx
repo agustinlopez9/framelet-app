@@ -57,10 +57,10 @@ export function SettingsPage() {
         title: portfolio.title,
         bio: portfolio.bio,
         galleryThemeId: portfolio.galleryThemeId,
-        fontId: (portfolio.fontId as PortfolioMetadataValues['fontId']) ?? 'default',
-        fontScale: portfolio.fontScale ?? 'regular',
+        fontId: portfolio.fontId as PortfolioMetadataValues['fontId'],
+        fontScale: portfolio.fontScale,
         folderDisplayMode: portfolio.folderDisplayMode ?? 'flat',
-        socialLinks: portfolio.socialLinks ?? [],
+        socialLinks: portfolio.socialLinks,
       });
     }
   }, [portfolio, form]);

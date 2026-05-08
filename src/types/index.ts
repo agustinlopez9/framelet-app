@@ -39,9 +39,9 @@ export interface Portfolio {
   createdAt: string;
   updatedAt: string;
   folderDisplayMode?: FolderDisplayMode;
-  fontId?: string;
-  fontScale?: FontScale;
-  socialLinks?: SocialLink[];
+  fontId: string;
+  fontScale: FontScale;
+  socialLinks: SocialLink[];
 }
 
 export interface PortfolioImage {

@@ -47,7 +47,7 @@ interface PortfolioFooterProps {
 }
 
 export function PortfolioFooter({ portfolio }: PortfolioFooterProps) {
-  const links: SocialLink[] = portfolio.socialLinks ?? [];
+  const links = portfolio.socialLinks;
 
   return (
     <footer className="mx-auto mt-16 flex max-w-6xl flex-col items-center gap-4 px-4 pb-8 pt-12 text-sm">

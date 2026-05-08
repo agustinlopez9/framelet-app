@@ -14,4 +14,5 @@ coverage
 openspec/
 .claude
 supabase/.temp/
+supabase/.temp/cli-latest
 .vercel

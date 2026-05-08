@@ -209,12 +209,10 @@ export async function deleteImage(image: PortfolioImage): Promise<void> {
   await supabase.storage.from(BUCKET).remove([image.storagePath]);
 }
 
-export async function reorderImages(ordered: PortfolioImage[]): Promise<void> {
-  const updates = ordered.map((img, idx) =>
-    supabase.from('images').update({ position: idx }).eq('id', img.id),
-  );
-  const results = await Promise.all(updates);
-  for (const r of results) {
-    if (r.error) throw new Error(r.error.message);
-  }
+export async function reorderImages(ordered: PortfolioImage[], portfolioId: string): Promise<void> {
+  const { error } = await supabase.rpc('reorder_images', {
+    ids: ordered.map((i) => i.id),
+    portfolio_id_in: portfolioId,
+  });
+  if (error) throw new Error(error.message);
 }

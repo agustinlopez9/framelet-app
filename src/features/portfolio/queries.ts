@@ -97,7 +97,7 @@ export function useReorderImages(portfolioId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ordered: PortfolioImage[]) => {
-      await reorderImages(ordered);
+      await reorderImages(ordered, portfolioId);
       return ordered;
     },
     onSuccess: (ordered) => {
@@ -140,7 +140,7 @@ export function useReorderFolders(portfolioId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ordered: ImageFolder[]) => {
-      await reorderFolders(ordered);
+      await reorderFolders(ordered, portfolioId);
       return ordered.map((f, idx) => ({ ...f, position: idx }));
     },
     onSuccess: (ordered) => {
