@@ -20,6 +20,9 @@ function makePortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
     published: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    fontId: 'default',
+    fontScale: 'regular',
+    socialLinks: [],
     ...overrides,
   };
 }
