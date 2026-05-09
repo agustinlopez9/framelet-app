@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { deriveUsernameFromEmail, setMyUsername } from '@/lib/api/auth';
 
-/**
- * OAuth callback landing page. Exchanges the code for a session, then routes
- * the user to either /onboarding/handle (if their handle is missing) or the
- * `next` query param (default /dashboard).
- */
 export function AuthCallbackPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -26,13 +22,21 @@ export function AuthCallbackPage() {
         }
         const { data } = await supabase.auth.getUser();
         if (cancelled) return;
-        const handle = (data.user?.user_metadata as { handle?: string } | undefined)?.handle;
+
+        const meta = data.user?.user_metadata as { username?: string } | undefined;
         const next = params.get('next') ?? '/dashboard';
-        if (!handle) {
-          navigate(`/onboarding/handle?next=${encodeURIComponent(next)}`, { replace: true });
-        } else {
-          navigate(next, { replace: true });
+
+        // For OAuth users without a username in metadata, derive from email and persist
+        if (!meta?.username && data.user?.email) {
+          const derived = deriveUsernameFromEmail(data.user.email);
+          try {
+            await setMyUsername(derived);
+          } catch {
+            // Non-fatal: DB trigger already created the users row with a derived username
+          }
         }
+
+        navigate(next, { replace: true });
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Sign-in failed.');

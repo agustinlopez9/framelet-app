@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const handleSchema = z
+export const usernameSchema = z
   .string()
   .regex(
     /^[a-z0-9][a-z0-9-]{2,29}$/,
@@ -10,7 +10,7 @@ export const handleSchema = z
 export const signUpSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
-  handle: handleSchema,
+  username: usernameSchema,
 });
 
 export const signInSchema = z.object({

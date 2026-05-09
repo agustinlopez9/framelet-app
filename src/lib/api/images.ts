@@ -1,9 +1,11 @@
 import { supabase } from '@/lib/supabase';
-import type { PortfolioImage } from '@/types';
+import type { PortfolioImage, UserPlan } from '@/types';
 
 const BUCKET = 'portfolio-images';
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const FREE_STORAGE_BYTES = 500 * 1024 * 1024;
+export const PREMIUM_STORAGE_BYTES = 20 * 1024 * 1024 * 1024;
 
 interface ImageRow {
   id: string;
@@ -13,6 +15,7 @@ interface ImageRow {
   description: string;
   alt_text: string;
   position: number;
+  file_size_bytes: number;
   width: number | null;
   height: number | null;
   folder_id: string | null;
@@ -33,6 +36,7 @@ function rowToImage(row: ImageRow): PortfolioImage {
     description: row.description,
     altText: row.alt_text,
     position: row.position,
+    fileSize: row.file_size_bytes,
     width: row.width,
     height: row.height,
     folderId: row.folder_id ?? null,
@@ -55,6 +59,8 @@ export interface UploadImageOptions {
   portfolioId: string;
   file: File;
   title?: string;
+  plan?: UserPlan;
+  currentStorageBytes?: number;
   onProgress?: (fraction: number) => void;
   signal?: AbortSignal;
 }
@@ -100,11 +106,16 @@ function extensionFor(file: File): string {
 export async function uploadImage(opts: UploadImageOptions): Promise<PortfolioImage> {
   validateFile(opts.file);
 
+  if (opts.plan !== undefined && opts.currentStorageBytes !== undefined) {
+    const limit = opts.plan === 'premium' ? PREMIUM_STORAGE_BYTES : FREE_STORAGE_BYTES;
+    if (opts.currentStorageBytes + opts.file.size > limit) {
+      throw new UploadValidationError('Storage quota exceeded. Free up space or upgrade.', opts.file.name);
+    }
+  }
+
   const imageId = crypto.randomUUID();
   const path = `${opts.ownerId}/${opts.portfolioId}/${imageId}.${extensionFor(opts.file)}`;
 
-  // Supabase JS client doesn't expose progress, so we PUT directly via fetch
-  // using a signed upload URL when a progress callback is provided.
   if (opts.onProgress) {
     await uploadWithProgress(path, opts.file, opts.onProgress, opts.signal);
   } else {
@@ -132,6 +143,7 @@ export async function uploadImage(opts: UploadImageOptions): Promise<PortfolioIm
       storage_path: path,
       position: nextPosition,
       title,
+      file_size_bytes: opts.file.size,
     })
     .select('*')
     .single<ImageRow>();
@@ -204,9 +216,10 @@ export async function assignImageFolder(
 }
 
 export async function deleteImage(image: PortfolioImage): Promise<void> {
+  const { error: storageErr } = await supabase.storage.from(BUCKET).remove([image.storagePath]);
+  if (storageErr) throw new Error(storageErr.message);
   const { error: dbErr } = await supabase.from('images').delete().eq('id', image.id);
   if (dbErr) throw new Error(dbErr.message);
-  await supabase.storage.from(BUCKET).remove([image.storagePath]);
 }
 
 export async function reorderImages(ordered: PortfolioImage[], portfolioId: string): Promise<void> {

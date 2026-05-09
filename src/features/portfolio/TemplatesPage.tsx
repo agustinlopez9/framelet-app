@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useFolders, useImages, useMyPortfolio, useUpdatePortfolio } from './queries';
+import { useFolders, useImages, useUpdatePortfolio } from './queries';
+import { usePortfolioContext } from './PortfolioContext';
 import { ensureRegistered, list as listTemplates } from '@/templates';
 import { TabbedTemplateHost } from '@/features/public-showcase/TabbedTemplateHost';
 import { toast } from '@/hooks/use-toast';
-import { Check, ExternalLink } from 'lucide-react';
+import { Check, ExternalLink, Lock } from 'lucide-react';
 import type { ImageFolder, Portfolio, PortfolioImage } from '@/types';
 
 ensureRegistered();
@@ -27,7 +28,6 @@ function TemplatePreview({ portfolio, images, folders, templateIdOverride }: Tem
   const [scale, setScale] = useState(1);
   const [contentHeight, setContentHeight] = useState(PREVIEW_DEFAULT_CONTENT_HEIGHT);
 
-  // Track outer width → compute scale so the 1280px-wide virtual stage fits.
   useEffect(() => {
     const node = outerRef.current;
     if (!node) return;
@@ -42,8 +42,6 @@ function TemplatePreview({ portfolio, images, folders, templateIdOverride }: Tem
     return () => ro.disconnect();
   }, []);
 
-  // Track stage content height so the spacer (and outer scrollable region) is
-  // sized correctly even though `transform: scale()` doesn't affect layout.
   useEffect(() => {
     const node = stageRef.current;
     if (!node) return;
@@ -64,25 +62,13 @@ function TemplatePreview({ portfolio, images, folders, templateIdOverride }: Tem
       ref={outerRef}
       data-testid="template-preview"
       className="relative w-full overflow-y-auto overflow-x-hidden rounded-md border bg-background"
-      style={{
-        // Visible preview window. The user can scroll inside this for
-        // templates whose content is taller than this height.
-        height: 'min(75vh, 760px)',
-        contain: 'layout paint',
-      }}
+      style={{ height: 'min(75vh, 760px)', contain: 'layout paint' }}
     >
-      {/* Spacer holds the visual height of the (transform-scaled) stage so
-          overflow-auto can compute scroll extents — `transform` doesn't affect
-          layout box, so we mirror it here. */}
       <div className="relative w-full" style={{ height: spacerHeight }}>
         <div
           ref={stageRef}
           className="absolute left-0 top-0"
-          style={{
-            width: PREVIEW_VIRTUAL_WIDTH,
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-          }}
+          style={{ width: PREVIEW_VIRTUAL_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}
         >
           <TabbedTemplateHost
             portfolio={{ ...portfolio, templateId: templateIdOverride }}
@@ -97,21 +83,24 @@ function TemplatePreview({ portfolio, images, folders, templateIdOverride }: Tem
 }
 
 export function TemplatesPage() {
-  const { data: portfolio } = useMyPortfolio();
-  const { data: images } = useImages(portfolio?.id);
-  const { data: folders = [] } = useFolders(portfolio?.id);
-  const update = useUpdatePortfolio();
+  const { portfolio, plan } = usePortfolioContext();
+  const { data: images } = useImages(portfolio.id);
+  const { data: folders = [] } = useFolders(portfolio.id);
+  const update = useUpdatePortfolio(portfolio.id);
   const templates = listTemplates();
   const [previewId, setPreviewId] = useState<string | null>(null);
-
-  if (!portfolio) return null;
 
   const previewing = previewId ?? portfolio.templateId;
 
   async function selectTemplate(id: string) {
+    const template = templates.find((t) => t.id === id);
+    if (template?.premiumOnly && plan === 'free') {
+      toast({ title: 'Premium template', description: 'Upgrade to Premium to use this template.', variant: 'destructive' });
+      return;
+    }
     try {
-      await update.mutateAsync({ id: portfolio!.id, patch: { templateId: id } });
-      toast({ title: `Template set to ${templates.find((t) => t.id === id)?.name ?? id}` });
+      await update.mutateAsync({ id: portfolio.id, patch: { templateId: id } });
+      toast({ title: `Template set to ${template?.name ?? id}` });
       setPreviewId(null);
     } catch (err) {
       toast({
@@ -121,6 +110,8 @@ export function TemplatesPage() {
       });
     }
   }
+
+  const publicPath = `/${portfolio.portfolioHandle}`;
 
   return (
     <div className="space-y-6">
@@ -136,24 +127,35 @@ export function TemplatesPage() {
             {templates.map((template) => {
               const active = template.id === portfolio.templateId;
               const previewActive = template.id === previewing;
+              const locked = template.premiumOnly && plan === 'free';
               return (
                 <button
                   key={template.id}
                   type="button"
-                  onClick={() => setPreviewId(template.id)}
+                  onClick={() => {
+                    if (locked) {
+                      toast({ title: 'Premium template', description: 'Upgrade to Premium to use this template.' });
+                      return;
+                    }
+                    setPreviewId(template.id);
+                  }}
                   className={cn(
-                    'group flex flex-col rounded-lg border bg-card p-4 text-left transition-all',
-                    previewActive ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/40',
+                    'group relative flex flex-col rounded-lg border bg-card p-4 text-left transition-all',
+                    locked ? 'opacity-60 cursor-not-allowed' : 'hover:border-primary/40',
+                    previewActive && !locked ? 'border-primary ring-2 ring-primary/20' : '',
                   )}
                 >
+                  {locked ? (
+                    <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                      <Lock className="h-2.5 w-2.5" /> Premium
+                    </span>
+                  ) : null}
                   <div className="aspect-video overflow-hidden rounded-md bg-muted">
                     <img
                       src={template.thumbnail}
                       alt=""
                       className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   </div>
                   <div className="mt-3 flex items-center justify-between">
@@ -180,7 +182,7 @@ export function TemplatesPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <a href={`/u/${portfolio.handle}`} target="_blank" rel="noreferrer">
+              <a href={publicPath} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-1.5 h-4 w-4" />
                 Open page
               </a>

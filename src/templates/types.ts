@@ -24,5 +24,6 @@ export interface Template<C extends TemplateConfig = TemplateConfig> {
   // When false, the template owns its own image-by-image navigation and the
   // public-showcase host MUST NOT attach the shared lightbox. Defaults to true.
   interactive?: boolean;
+  premiumOnly?: boolean;
   loadComponent(): Promise<ComponentType<TemplateProps<C>>>;
 }

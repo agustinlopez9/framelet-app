@@ -25,7 +25,7 @@ export function SignUpPage() {
 
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { email: '', password: '', handle: '' },
+    defaultValues: { email: '', password: '', username: '' },
   });
 
   async function onSubmit(values: SignUpValues) {
@@ -33,11 +33,11 @@ export function SignUpPage() {
     setGlobalError(null);
     try {
       await signUp(values);
-      const next = params.get('next') ?? '/dashboard';
+      const next = params.get('next') ?? '/onboarding/portfolio';
       navigate(next, { replace: true });
     } catch (err) {
-      if (err instanceof AuthError && err.code === 'handle_taken') {
-        form.setError('handle', { message: 'That handle is already taken.' });
+      if (err instanceof AuthError && err.code === 'username_taken') {
+        form.setError('username', { message: 'That username is already taken.' });
       } else if (err instanceof AuthError) {
         setGlobalError(err.message);
       } else {
@@ -65,7 +65,7 @@ export function SignUpPage() {
       <Card>
         <CardHeader>
           <CardTitle>Create an account</CardTitle>
-          <CardDescription>Pick a handle — that becomes your portfolio URL.</CardDescription>
+          <CardDescription>Pick a username — that becomes your portfolio URL.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -98,20 +98,21 @@ export function SignUpPage() {
               />
               <FormField
                 control={form.control}
-                name="handle"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Handle</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="your-handle"
+                        placeholder="your-username"
                         autoCapitalize="none"
                         autoComplete="off"
+                        maxLength={30}
                         {...field}
                         onChange={(e) => field.onChange(e.target.value.toLowerCase())}
                       />
                     </FormControl>
-                    <FormDescription>Your portfolio URL: framelet.app/u/{field.value || 'your-handle'}</FormDescription>
+                    <FormDescription className="truncate">Your portfolio URL: framelet.app/{field.value || 'your-username'}/…</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

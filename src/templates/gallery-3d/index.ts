@@ -7,6 +7,7 @@ export const gallery3dTemplate: Template = {
   description: 'A calm 3D presentation: one image centered, neighbors in soft perspective.',
   thumbnail: '/templates/gallery-3d.svg',
   defaultConfig: {},
+  premiumOnly: true,
   loadComponent: async () => {
     const mod = await import('./Gallery3D');
     return mod.default as ComponentType<TemplateProps>;

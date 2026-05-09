@@ -1,9 +1,12 @@
 export interface User {
   id: string;
   email: string;
-  handle: string;
+  username: string;
+  storageUsedBytes: number;
   createdAt: string;
 }
+
+export type UserPlan = 'free' | 'premium';
 
 export type FolderDisplayMode = 'tabs' | 'flat';
 
@@ -29,7 +32,8 @@ export interface SocialLink {
 export interface Portfolio {
   id: string;
   ownerId: string;
-  handle: string;
+  portfolioHandle: string;
+  isDefault: boolean;
   title: string;
   bio: string;
   templateId: string;
@@ -44,6 +48,14 @@ export interface Portfolio {
   socialLinks: SocialLink[];
 }
 
+export interface Subscription {
+  id: string;
+  userId: string;
+  plan: 'premium';
+  startedAt: string;
+  expiresAt: string | null;
+}
+
 export interface PortfolioImage {
   id: string;
   portfolioId: string;
@@ -53,11 +65,33 @@ export interface PortfolioImage {
   description: string;
   altText: string;
   position: number;
+  fileSize: number;
   width: number | null;
   height: number | null;
   createdAt: string;
   folderId?: string | null;
 }
+
+export interface Video {
+  id: string;
+  portfolioId: string;
+  storagePath: string;
+  url: string;
+  title: string;
+  description: string;
+  position: number;
+  durationSeconds: number | null;
+  thumbnailPath: string | null;
+  fileSize: number;
+  width: number | null;
+  height: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MediaItem =
+  | (PortfolioImage & { mediaType: 'image' })
+  | (Video & { mediaType: 'video' });
 
 export interface ImageFolder {
   id: string;

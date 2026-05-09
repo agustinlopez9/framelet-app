@@ -13,6 +13,8 @@ import { listFolders } from './folders';
 interface PortfolioRow {
   id: string;
   owner_id: string;
+  portfolio_handle: string;
+  is_default: boolean;
   title: string;
   bio: string;
   template_id: string;
@@ -35,6 +37,7 @@ interface ImageRow {
   description: string;
   alt_text: string;
   position: number;
+  file_size_bytes: number;
   width: number | null;
   height: number | null;
   folder_id: string | null;
@@ -48,11 +51,12 @@ function publicUrlFor(path: string): string {
   return data.publicUrl;
 }
 
-function rowToPortfolio(row: PortfolioRow, handle: string): Portfolio {
+function rowToPortfolio(row: PortfolioRow): Portfolio {
   return {
     id: row.id,
     ownerId: row.owner_id,
-    handle,
+    portfolioHandle: row.portfolio_handle ?? '',
+    isDefault: row.is_default ?? false,
     title: row.title,
     bio: row.bio,
     templateId: row.template_id,
@@ -78,6 +82,7 @@ function rowToImage(row: ImageRow): PortfolioImage {
     description: row.description,
     altText: row.alt_text,
     position: row.position,
+    fileSize: row.file_size_bytes,
     width: row.width,
     height: row.height,
     folderId: row.folder_id ?? null,
@@ -85,18 +90,83 @@ function rowToImage(row: ImageRow): PortfolioImage {
   };
 }
 
-export async function getMyPortfolio(): Promise<Portfolio | null> {
+export async function getMyPortfolios(): Promise<Portfolio[]> {
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
+  if (!auth.user) return [];
 
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select('*')
+    .eq('owner_id', auth.user.id)
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+
+  return (data as PortfolioRow[]).map(rowToPortfolio);
+}
+
+export async function getPortfolioById(id: string): Promise<Portfolio | null> {
   const { data: row, error } = await supabase
     .from('portfolios')
-    .select('*, users!owner_id(handle)')
-    .eq('owner_id', auth.user.id)
-    .single<PortfolioRow & { users: { handle: string } }>();
+    .select('*')
+    .eq('id', id)
+    .single<PortfolioRow>();
   if (error || !row) return null;
+  return rowToPortfolio(row);
+}
 
-  return rowToPortfolio(row, row.users.handle);
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50) || 'portfolio';
+}
+
+export interface CreatePortfolioInput {
+  title: string;
+  bio?: string;
+  templateId?: string;
+}
+
+export async function createPortfolio(input: CreatePortfolioInput): Promise<Portfolio> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error('Not authenticated');
+
+  const portfolioHandle = slugify(input.title);
+
+  const { data, error } = await supabase
+    .from('portfolios')
+    .insert({
+      owner_id: auth.user.id,
+      title: input.title,
+      bio: input.bio ?? '',
+      template_id: input.templateId ?? 'simple-grid',
+      portfolio_handle: portfolioHandle,
+    })
+    .select('*')
+    .single<PortfolioRow>();
+
+  if (error || !data) throw new Error(error?.message ?? 'Failed to create portfolio');
+  return rowToPortfolio(data);
+}
+
+export async function setDefaultPortfolio(portfolioId: string): Promise<void> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error('Not authenticated');
+
+  await supabase
+    .from('portfolios')
+    .update({ is_default: false })
+    .eq('owner_id', auth.user.id)
+    .neq('id', portfolioId);
+
+  const { error } = await supabase
+    .from('portfolios')
+    .update({ is_default: true })
+    .eq('id', portfolioId)
+    .eq('owner_id', auth.user.id);
+
+  if (error) throw new Error(error.message);
 }
 
 export interface PublicPortfolioResult {
@@ -105,12 +175,16 @@ export interface PublicPortfolioResult {
   folders: ImageFolder[];
 }
 
-export async function getPortfolioByHandle(handle: string): Promise<PublicPortfolioResult | null> {
+export async function getPortfolioByHandle(
+  username: string,
+  portfolioHandle: string,
+): Promise<PublicPortfolioResult | null> {
   const { data: row } = await supabase
     .from('portfolios')
-    .select('*, users!inner(handle)')
-    .eq('users.handle', handle.toLowerCase())
-    .maybeSingle<PortfolioRow & { users: { handle: string } }>();
+    .select('*, users!inner(username)')
+    .eq('users.username', username.toLowerCase())
+    .eq('portfolio_handle', portfolioHandle.toLowerCase())
+    .maybeSingle<PortfolioRow & { users: { username: string } }>();
   if (!row) return null;
 
   const [imagesResult, folders] = await Promise.all([
@@ -123,10 +197,20 @@ export async function getPortfolioByHandle(handle: string): Promise<PublicPortfo
   ]);
 
   return {
-    portfolio: rowToPortfolio(row, row.users.handle),
+    portfolio: rowToPortfolio(row),
     images: ((imagesResult.data as ImageRow[] | null) ?? []).map(rowToImage),
     folders,
   };
+}
+
+export async function getDefaultPortfolioHandle(username: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('portfolios')
+    .select('portfolio_handle, users!inner(username)')
+    .eq('users.username', username.toLowerCase())
+    .eq('is_default', true)
+    .maybeSingle<{ portfolio_handle: string }>();
+  return data?.portfolio_handle ?? null;
 }
 
 export interface UpdatePortfolioInput {
@@ -140,6 +224,7 @@ export interface UpdatePortfolioInput {
   fontScale?: FontScale;
   socialLinks?: SocialLink[];
   published?: boolean;
+  portfolioHandle?: string;
 }
 
 export async function updatePortfolio(id: string, patch: UpdatePortfolioInput): Promise<Portfolio> {
@@ -154,15 +239,15 @@ export async function updatePortfolio(id: string, patch: UpdatePortfolioInput): 
   if (patch.fontScale !== undefined) update.font_scale = patch.fontScale;
   if (patch.socialLinks !== undefined) update.social_links = patch.socialLinks;
   if (patch.published !== undefined) update.published = patch.published;
+  if (patch.portfolioHandle !== undefined) update.portfolio_handle = patch.portfolioHandle;
 
   const { data, error } = await supabase
     .from('portfolios')
     .update(update)
     .eq('id', id)
-    .select('*, users:owner_id(handle)')
-    .single();
+    .select('*')
+    .single<PortfolioRow>();
   if (error || !data) throw new Error(error?.message ?? 'Failed to update portfolio');
 
-  const row = data as PortfolioRow & { users: { handle: string } };
-  return rowToPortfolio(row, row.users.handle);
+  return rowToPortfolio(data);
 }

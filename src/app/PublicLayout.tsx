@@ -1,14 +1,20 @@
-import { Link, Outlet, useMatch } from 'react-router-dom';
+import { Link, Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { useSession } from '@/features/auth/useSession';
+import { signOut } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';
 
 export function PublicLayout() {
   const { status } = useSession();
-  // Hide the marketing/auth navbar entirely on public portfolio routes
-  // (`/u/:handle`). The portfolio page renders its own chrome (an owner-only
-  // "Back to dashboard" pill) so visitors see the portfolio uninterrupted.
-  const isPortfolioRoute = !!useMatch('/u/:handle');
+  const navigate = useNavigate();
+  // Hide the navbar on public portfolio pages so visitors see the portfolio uninterrupted.
+  const isPortfolioRoute =
+    !!useMatch('/:username/:portfolioHandle');
+
+  async function onLogout() {
+    await signOut();
+    navigate('/', { replace: true });
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -24,9 +30,14 @@ export function PublicLayout() {
             </Link>
             <nav className="flex items-center gap-2">
               {status === 'authenticated' ? (
-                <Button asChild size="sm">
-                  <Link to="/dashboard">Dashboard</Link>
-                </Button>
+                <>
+                  <Button asChild size="sm">
+                    <Link to="/dashboard">Dashboard</Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={onLogout}>
+                    Log out
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button

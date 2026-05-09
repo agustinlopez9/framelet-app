@@ -11,7 +11,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import type { ImageFolder, PortfolioImage } from '@/types';
+import type { ImageFolder, MediaItem, PortfolioImage } from '@/types';
 import { UploadPage } from './UploadPage';
 import { DeleteImageConfirm, EditDialog, ImageList } from './ImageList';
 import { type FolderSelection } from './FolderRail';
@@ -23,18 +23,14 @@ import {
 } from '@/features/public-showcase/lightbox/LightboxContext';
 import { Lightbox } from '@/features/public-showcase/lightbox/Lightbox';
 import {
-  imagesKey,
+  mediaKey,
   useFolders,
-  useImages,
-  useMyPortfolio,
-  useReorderImages,
+  useMedia,
+  useReorderMedia,
   useUpdateImage,
 } from './queries';
+import { usePortfolioContext } from './PortfolioContext';
 
-/**
- * Drop selection ids that are no longer visible. Returns the same Set
- * reference when nothing changed so the React state setter can short-circuit.
- */
 export function reconcileSelection(prev: Set<string>, visibleIds: string[]): Set<string> {
   if (prev.size === 0) return prev;
   const visible = new Set(visibleIds);
@@ -49,19 +45,23 @@ export function reconcileSelection(prev: Set<string>, visibleIds: string[]): Set
 
 export function ImagesPage() {
   const qc = useQueryClient();
-  const { data: portfolio } = useMyPortfolio();
-  const { data: allImages = [] } = useImages(portfolio?.id);
-  const { data: folders = [] } = useFolders(portfolio?.id);
-  const reorderImages = useReorderImages(portfolio?.id ?? '');
-  const updateImage = useUpdateImage(portfolio?.id ?? '');
+  const { portfolio } = usePortfolioContext();
+  const { data: allMedia = [] } = useMedia(portfolio.id);
+  const { data: folders = [] } = useFolders(portfolio.id);
+  const reorderMedia = useReorderMedia(portfolio.id);
+  const updateImage = useUpdateImage(portfolio.id);
   const [selected, setSelected] = useState<FolderSelection>('all');
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useViewMode();
-  // Lightbox-driven Edit/Delete dialogs live here so they sit above the
-  // lightbox via Radix portals.
   const [lightboxEditing, setLightboxEditing] = useState<PortfolioImage | null>(null);
   const [lightboxDeleting, setLightboxDeleting] = useState<PortfolioImage | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  // Split media into typed lists for image-specific operations
+  const allImages = useMemo(
+    () => allMedia.filter((m): m is MediaItem & { mediaType: 'image' } => m.mediaType === 'image'),
+    [allMedia],
+  );
 
   const toggleSelection = useCallback((id: string) => {
     setSelection((prev) => {
@@ -92,9 +92,6 @@ export function ImagesPage() {
     );
   }
 
-  // Folder reordering is intentionally not supported in this pass — folders
-  // render as a horizontal tab strip whose order is API-determined. The drag
-  // handler only moves images (across folders or within the active list).
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
@@ -104,8 +101,7 @@ export function ImagesPage() {
       const target = overId.slice('folder:'.length);
       if (target === 'all') return;
       const activeId = String(active.id);
-      const ids =
-        selection.has(activeId) && selection.size > 0 ? Array.from(selection) : [activeId];
+      const ids = selection.has(activeId) && selection.size > 0 ? Array.from(selection) : [activeId];
       void moveImagesToFolder(ids, target);
       return;
     }
@@ -114,24 +110,37 @@ export function ImagesPage() {
     const oldIdx = allImages.findIndex((img) => img.id === active.id);
     const newIdx = allImages.findIndex((img) => img.id === over.id);
     if (oldIdx === -1 || newIdx === -1) return;
-    reorderImages.mutate(arrayMove(allImages, oldIdx, newIdx));
+
+    const reorderedImages = arrayMove(allImages, oldIdx, newIdx);
+
+    // Merge reordered images back into the full media list (preserving video positions)
+    let imageIdx = 0;
+    const merged: MediaItem[] = [...allMedia]
+      .sort((a, b) => a.position - b.position)
+      .map((item) => {
+        if (item.mediaType === 'image') {
+          return { ...reorderedImages[imageIdx++], mediaType: 'image' as const };
+        }
+        return item;
+      });
+
+    reorderMedia.mutate(merged);
   }
 
   async function moveImagesToFolder(ids: string[], folderId: string | null) {
-    if (!portfolio || ids.length === 0) return;
-    qc.setQueryData<PortfolioImage[]>(imagesKey(portfolio.id), (prev) =>
-      prev?.map((img) => (ids.includes(img.id) ? { ...img, folderId } : img)),
+    if (ids.length === 0) return;
+    qc.setQueryData<MediaItem[]>(mediaKey(portfolio.id), (prev) =>
+      prev?.map((item) =>
+        item.mediaType === 'image' && ids.includes(item.id) ? { ...item, folderId } : item,
+      ),
     );
     const results = await Promise.allSettled(
       ids.map((id) => updateImage.mutateAsync({ id, patch: { folderId } })),
     );
     const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed > 0) {
-      qc.invalidateQueries({ queryKey: imagesKey(portfolio.id) });
-      toast({
-        title: `Could not move ${failed} image${failed === 1 ? '' : 's'}`,
-        variant: 'destructive',
-      });
+      qc.invalidateQueries({ queryKey: mediaKey(portfolio.id) });
+      toast({ title: `Could not move ${failed} image${failed === 1 ? '' : 's'}`, variant: 'destructive' });
     } else if (ids.length > 1) {
       toast({ title: `Moved ${ids.length} images` });
     }
@@ -200,10 +209,6 @@ interface ImagesPageInnerProps {
   onLightboxDelete: (image: PortfolioImage) => void;
 }
 
-/**
- * Renders the dashboard image manager inside the LightboxProvider so the
- * "open viewer" callback can dispatch openAt directly through the context.
- */
 function ImagesPageInner({
   portfolioId,
   allImages,

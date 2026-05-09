@@ -14,15 +14,15 @@ type LoadState =
   | { status: 'ok'; data: PublicPortfolioResult };
 
 export function PublicPortfolioPage() {
-  const { handle } = useParams<{ handle: string }>();
+  const { username, portfolioHandle } = useParams<{ username: string; portfolioHandle: string }>();
   const { session, status: sessionStatus } = useSession();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   useEffect(() => {
-    if (!handle) return;
+    if (!username || !portfolioHandle) return;
     if (sessionStatus === 'loading') return;
     let cancelled = false;
-    getPortfolioByHandle(handle).then((result) => {
+    getPortfolioByHandle(username, portfolioHandle).then((result) => {
       if (cancelled) return;
       if (!result) {
         setState({ status: 'not-found' });
@@ -39,7 +39,7 @@ export function PublicPortfolioPage() {
     return () => {
       cancelled = true;
     };
-  }, [handle, session?.user?.id, sessionStatus]);
+  }, [username, portfolioHandle, session?.user?.id, sessionStatus]);
 
   if (state.status === 'loading') {
     return (

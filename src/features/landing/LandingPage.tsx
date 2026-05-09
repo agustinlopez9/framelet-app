@@ -1,6 +1,7 @@
 import { HeroSection } from './sections/HeroSection';
 import { AudienceSection } from './sections/AudienceSection';
 import { HowItWorksSection } from './sections/HowItWorksSection';
+import { PricingSection } from './sections/PricingSection';
 import { LandingFooter } from './sections/LandingFooter';
 
 export function LandingPage() {
@@ -9,6 +10,7 @@ export function LandingPage() {
       <HeroSection />
       <AudienceSection />
       <HowItWorksSection />
+      <PricingSection />
       <LandingFooter />
     </div>
   );
