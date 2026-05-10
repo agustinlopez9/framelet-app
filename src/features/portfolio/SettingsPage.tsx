@@ -26,7 +26,6 @@ import { list as listThemes } from '@/themes';
 import { TwoToneSwatch } from '@/themes/TwoToneSwatch';
 import { fontCatalog } from '@/themes/fonts';
 import { platformMeta } from '@/features/public-showcase/PortfolioFooter';
-import { slugify } from '@/lib/api/portfolios';
 import type { SocialPlatform } from '@/types';
 
 const portfolioHandleSchema = z

@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PublicLayout } from './PublicLayout';
-import { DashboardLayout } from './DashboardLayout';
+import { PrivateLayout } from './PrivateLayout';
 import { PortfolioLayout } from './PortfolioLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { SignUpPage } from '@/features/auth/SignUpPage';
@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
         element: <RequirePortfolio />,
         children: [
           {
-            element: <DashboardLayout />,
+            element: <PrivateLayout />,
             children: [
               { path: '/dashboard', element: <PortfolioListPage /> },
               { path: '/dashboard/new', element: <OnboardingPortfolioPage /> },
