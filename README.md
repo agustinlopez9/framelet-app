@@ -22,15 +22,15 @@ Provision the schema and storage bucket by running every file in `supabase/migra
 
 ## Scripts
 
-| Command            | Purpose                                          |
-| ------------------ | ------------------------------------------------ |
-| `npm run dev`      | Start the Vite dev server.                       |
-| `npm run build`    | Type-check and produce a production build.       |
-| `npm run preview`  | Preview the production build locally.            |
-| `npm run typecheck`| Run `tsc -b --noEmit`.                           |
-| `npm run lint`     | Run ESLint over the project.                     |
-| `npm run format`   | Run Prettier in write mode.                      |
-| `npm run test`     | Run the Vitest test suite once.                  |
+| Command             | Purpose                                    |
+| ------------------- | ------------------------------------------ |
+| `npm run dev`       | Start the Vite dev server.                 |
+| `npm run build`     | Type-check and produce a production build. |
+| `npm run preview`   | Preview the production build locally.      |
+| `npm run typecheck` | Run `tsc -b --noEmit`.                     |
+| `npm run lint`      | Run ESLint over the project.               |
+| `npm run format`    | Run Prettier in write mode.                |
+| `npm run test`      | Run the Vitest test suite once.            |
 
 ## Source layout
 

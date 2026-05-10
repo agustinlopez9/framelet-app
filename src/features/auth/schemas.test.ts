@@ -20,12 +20,20 @@ describe('username schema', () => {
 
 describe('signUpSchema', () => {
   it('rejects passwords shorter than 8 characters', () => {
-    const r = signUpSchema.safeParse({ email: 'a@b.co', password: 'short', username: 'goodhandle' });
+    const r = signUpSchema.safeParse({
+      email: 'a@b.co',
+      password: 'short',
+      username: 'goodhandle',
+    });
     expect(r.success).toBe(false);
   });
 
   it('rejects invalid emails', () => {
-    const r = signUpSchema.safeParse({ email: 'nope', password: 'longenough', username: 'goodhandle' });
+    const r = signUpSchema.safeParse({
+      email: 'nope',
+      password: 'longenough',
+      username: 'goodhandle',
+    });
     expect(r.success).toBe(false);
   });
 

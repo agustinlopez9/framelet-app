@@ -15,10 +15,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { handleSchema } from './schemas';
-import { isHandleAvailable, setMyHandle, AuthError } from '@/lib/api/auth';
+import { usernameSchema } from './schemas';
+import { isUsernameAvailable, setMyUsername, AuthError } from '@/lib/api/auth';
 
-const formSchema = z.object({ handle: handleSchema });
+const formSchema = z.object({ handle: usernameSchema });
 type FormValues = z.infer<typeof formSchema>;
 
 export function OnboardingHandlePage() {
@@ -36,12 +36,12 @@ export function OnboardingHandlePage() {
     setSubmitting(true);
     setGlobalError(null);
     try {
-      const available = await isHandleAvailable(values.handle);
+      const available = await isUsernameAvailable(values.handle);
       if (!available) {
         form.setError('handle', { message: 'That handle is already taken.' });
         return;
       }
-      await setMyHandle(values.handle);
+      await setMyUsername(values.handle);
       const next = params.get('next') ?? '/dashboard';
       navigate(next, { replace: true });
     } catch (err) {

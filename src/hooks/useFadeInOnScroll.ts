@@ -29,10 +29,12 @@ function prefersReducedMotion(): boolean {
  * (fade-in, slide-up). When `prefers-reduced-motion: reduce` is set, the
  * boolean is always `true` so consumers can skip the animation entirely.
  */
-export function useFadeInOnScroll<T extends HTMLElement = HTMLElement>(
-  { delayMs = 0 }: UseFadeInOnScrollOptions = {},
-): UseFadeInOnScrollResult<T> {
-  const [shown, setShown] = useState<boolean>(() => prefersReducedMotion());
+export function useFadeInOnScroll<T extends HTMLElement = HTMLElement>({
+  delayMs = 0,
+}: UseFadeInOnScrollOptions = {}): UseFadeInOnScrollResult<T> {
+  const [shown, setShown] = useState<boolean>(
+    () => prefersReducedMotion() || typeof IntersectionObserver === 'undefined',
+  );
   const nodeRef = useRef<T | null>(null);
 
   const setRef = (node: T | null) => {
@@ -43,10 +45,6 @@ export function useFadeInOnScroll<T extends HTMLElement = HTMLElement>(
     if (shown) return;
     const node = nodeRef.current;
     if (!node) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      setShown(true);
-      return;
-    }
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {

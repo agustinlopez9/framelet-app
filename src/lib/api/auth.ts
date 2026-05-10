@@ -107,11 +107,13 @@ export async function updatePassword(newPassword: string): Promise<void> {
 
 export function deriveUsernameFromEmail(email: string): string {
   const local = email.split('@')[0] ?? '';
-  return local
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 30) || 'user';
+  return (
+    local
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 30) || 'user'
+  );
 }
 
 interface UserRow {

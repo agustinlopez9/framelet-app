@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import type { Portfolio, User } from '@/types';
+import type { Portfolio } from '@/features/portfolio/types';
+import type { User } from '@/types';
 
 const toastMock = vi.fn();
 
@@ -55,7 +56,7 @@ vi.mock('@/templates', () => ({
 
 vi.mock('@/hooks/use-toast', () => ({ toast: (...args: unknown[]) => toastMock(...args) }));
 
-import { DashboardOverview } from './DashboardOverview';
+import { DashboardOverview } from './components/DashboardOverview';
 
 function renderOverview() {
   return render(

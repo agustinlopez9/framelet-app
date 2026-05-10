@@ -112,7 +112,9 @@ export function SignUpPage() {
                         onChange={(e) => field.onChange(e.target.value.toLowerCase())}
                       />
                     </FormControl>
-                    <FormDescription className="truncate">Your portfolio URL: framelet.app/{field.value || 'your-username'}/…</FormDescription>
+                    <FormDescription className="truncate">
+                      Your portfolio URL: framelet.app/{field.value || 'your-username'}/…
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

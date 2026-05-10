@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { Video, UserPlan } from '@/types';
+import type { Video } from '@/features/portfolio/types';
+import type { UserPlan } from '@/types';
 import { FREE_STORAGE_BYTES, PREMIUM_STORAGE_BYTES } from './images';
 
 const BUCKET = 'portfolio-videos';
@@ -166,9 +167,7 @@ async function uploadWithProgress(
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const { data: signed, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUploadUrl(path);
+  const { data: signed, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
   if (error || !signed) throw new Error(error?.message ?? 'Failed to create upload URL');
 
   await new Promise<void>((resolve, reject) => {

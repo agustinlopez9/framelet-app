@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { PortfolioImage, UserPlan } from '@/types';
+import type { PortfolioImage } from '@/features/portfolio/types';
+import type { UserPlan } from '@/types';
 
 const BUCKET = 'portfolio-images';
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -109,7 +110,10 @@ export async function uploadImage(opts: UploadImageOptions): Promise<PortfolioIm
   if (opts.plan !== undefined && opts.currentStorageBytes !== undefined) {
     const limit = opts.plan === 'premium' ? PREMIUM_STORAGE_BYTES : FREE_STORAGE_BYTES;
     if (opts.currentStorageBytes + opts.file.size > limit) {
-      throw new UploadValidationError('Storage quota exceeded. Free up space or upgrade.', opts.file.name);
+      throw new UploadValidationError(
+        'Storage quota exceeded. Free up space or upgrade.',
+        opts.file.name,
+      );
     }
   }
 
@@ -160,9 +164,7 @@ async function uploadWithProgress(
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const { data: signed, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUploadUrl(path);
+  const { data: signed, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
   if (error || !signed) throw new Error(error?.message ?? 'Failed to create upload URL');
 
   await new Promise<void>((resolve, reject) => {

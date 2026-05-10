@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { usePortfolioContext } from './PortfolioContext';
-import { useMedia, useUpdatePortfolio } from './queries';
+import { usePortfolioContext } from '@/context/PortfolioContext';
+import { useMedia, useUpdatePortfolio } from '@/queries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -71,7 +71,9 @@ export function DashboardOverview() {
         <CardHeader>
           <CardTitle className="text-base">Public URL</CardTitle>
           <CardDescription>
-            {portfolio.published ? 'Anyone with this link can view your portfolio.' : 'Hidden until published.'}
+            {portfolio.published
+              ? 'Anyone with this link can view your portfolio.'
+              : 'Hidden until published.'}
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ImageFolder, Portfolio, PortfolioImage } from '@/types';
+import type { ImageFolder, Portfolio, PortfolioImage } from '@/features/portfolio/types';
 
 const templateHostMock = vi.fn(({ images }: { images: PortfolioImage[] }) => (
   <div data-testid="template-host" data-image-count={images.length}>

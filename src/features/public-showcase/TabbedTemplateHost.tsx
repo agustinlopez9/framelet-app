@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ImageFolder, Portfolio, PortfolioImage } from '@/types';
+import type { ImageFolder, Portfolio, PortfolioImage } from '@/features/portfolio/types';
 import { TemplateHost } from './TemplateHost';
 import { PortfolioFooter } from './PortfolioFooter';
 
@@ -44,7 +44,10 @@ export function TabbedTemplateHost({
     [images, hiddenFolderIds],
   );
 
-  const visibleFolderIds = useMemo(() => new Set(visibleFolders.map((f) => f.id)), [visibleFolders]);
+  const visibleFolderIds = useMemo(
+    () => new Set(visibleFolders.map((f) => f.id)),
+    [visibleFolders],
+  );
   const folderHasImage = useMemo(() => {
     const set = new Set<string>();
     for (const img of visibleImages) {
@@ -105,12 +108,7 @@ export function TabbedTemplateHost({
           </Tabs>
         </div>
       </div>
-      <TemplateHost
-        portfolio={portfolio}
-        images={currentImages}
-        inPreview={inPreview}
-        hideHeader
-      />
+      <TemplateHost portfolio={portfolio} images={currentImages} inPreview={inPreview} hideHeader />
       {inPreview ? null : <PortfolioFooter portfolio={portfolio} />}
     </>
   );

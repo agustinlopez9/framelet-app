@@ -61,12 +61,7 @@ describe('catalog', () => {
     'studio-mono',
   ];
 
-  const REMOVED_THEMES = [
-    'sunset-boulevard',
-    'forest-canopy',
-    'golden-hour',
-    'botanical-garden',
-  ];
+  const REMOVED_THEMES = ['sunset-boulevard', 'forest-canopy', 'golden-hour', 'botanical-garden'];
 
   it('ensureRegistered registers every catalog theme including the default', () => {
     ensureRegistered();

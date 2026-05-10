@@ -1,4 +1,4 @@
-import { DashboardOverview } from './DashboardOverview';
+import { DashboardOverview } from './components/DashboardOverview';
 
 export function DashboardPage() {
   return (

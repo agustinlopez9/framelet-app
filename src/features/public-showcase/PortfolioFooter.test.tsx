@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { Portfolio, SocialLink } from '@/types';
+import type { Portfolio, SocialLink } from '@/features/portfolio/types';
 import { PortfolioFooter } from './PortfolioFooter';
 
 function makePortfolio(socialLinks: SocialLink[] = []): Portfolio {

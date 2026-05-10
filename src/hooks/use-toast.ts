@@ -76,7 +76,8 @@ type ToastInput = Omit<ToasterToast, 'id'>;
 
 export function toast(props: ToastInput) {
   const id = genId();
-  const update = (next: Partial<ToasterToast>) => dispatch({ type: 'UPDATE', toast: { ...next, id } });
+  const update = (next: Partial<ToasterToast>) =>
+    dispatch({ type: 'UPDATE', toast: { ...next, id } });
   const dismiss = () => dispatch({ type: 'DISMISS', id });
   dispatch({
     type: 'ADD',

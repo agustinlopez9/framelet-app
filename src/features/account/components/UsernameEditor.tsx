@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { isUsernameAvailable, AuthError } from '@/lib/api/auth';
 import { usernameSchema } from '@/features/auth/schemas';
-import { useUpdateUsername } from '@/features/portfolio/queries';
+import { useUpdateUsername } from '@/queries';
 
 export function UsernameEditor({ username }: { username: string }) {
   const update = useUpdateUsername();
@@ -16,10 +16,6 @@ export function UsernameEditor({ username }: { username: string }) {
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (!editing) setDraft(username);
-  }, [username, editing]);
 
   function startEdit() {
     setDraft(username);
@@ -90,26 +86,54 @@ export function UsernameEditor({ username }: { username: string }) {
           onChange={(e) => setDraft(e.target.value.toLowerCase())}
           onKeyDown={(e) => {
             if (!editing) return;
-            if (e.key === 'Enter') { e.preventDefault(); void confirmEdit(); }
-            else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void confirmEdit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              cancelEdit();
+            }
           }}
           className={cn('pl-[108px] pr-20', error && 'border-destructive')}
           autoCapitalize="none"
           autoComplete="off"
           maxLength={30}
         />
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1">
           {editing ? (
             <>
-              <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={confirmEdit} disabled={checking || update.isPending} aria-label="Save username">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={confirmEdit}
+                disabled={checking || update.isPending}
+                aria-label="Save username"
+              >
                 <Check className="h-4 w-4" />
               </Button>
-              <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEdit} disabled={checking || update.isPending} aria-label="Cancel">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={cancelEdit}
+                disabled={checking || update.isPending}
+                aria-label="Cancel"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </>
           ) : (
-            <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={startEdit} aria-label="Edit username">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={startEdit}
+              aria-label="Edit username"
+            >
               <Pencil className="h-4 w-4" />
             </Button>
           )}
@@ -117,7 +141,10 @@ export function UsernameEditor({ username }: { username: string }) {
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <p className="text-xs text-muted-foreground">
-        Your portfolios live at <code>framelet.app/{editing ? (draft.trim().toLowerCase() || 'your-username') : username}/…</code>
+        Your portfolios live at{' '}
+        <code>
+          framelet.app/{editing ? draft.trim().toLowerCase() || 'your-username' : username}/…
+        </code>
       </p>
     </div>
   );

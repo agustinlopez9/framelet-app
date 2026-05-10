@@ -7,7 +7,7 @@ import type {
   PortfolioImage,
   SocialLink,
   TemplateConfig,
-} from '@/types';
+} from '@/features/portfolio/types';
 import { listFolders } from './folders';
 
 interface PortfolioRow {
@@ -115,11 +115,13 @@ export async function getPortfolioById(id: string): Promise<Portfolio | null> {
 }
 
 export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 50) || 'portfolio';
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 50) || 'portfolio'
+  );
 }
 
 export interface CreatePortfolioInput {

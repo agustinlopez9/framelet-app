@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -11,37 +11,23 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import type { ImageFolder, MediaItem, PortfolioImage } from '@/types';
+import type { ImageFolder, MediaItem, PortfolioImage } from '@/features/portfolio/types';
 import { UploadPage } from './UploadPage';
-import { DeleteImageConfirm, EditDialog, ImageList } from './ImageList';
-import { type FolderSelection } from './FolderRail';
-import { useViewMode, type ViewMode } from './useViewMode';
+import { ImageList } from './components/ImageList';
+import { ImageEditDialog as EditDialog } from './components/ImageList/ImageEditDialog';
+import { DeleteImageDialog as DeleteImageConfirm } from './components/ImageList/DeleteImageDialog';
+import { type FolderSelection } from './components/FolderRail';
+import { useViewMode, type ViewMode } from '../../hooks/useViewMode';
+import { useImageSelection } from '@/hooks/useImageSelection';
 import { DashboardLightboxToolbar } from './DashboardLightboxToolbar';
 import {
   LightboxProvider,
   useLightboxState,
 } from '@/features/public-showcase/lightbox/LightboxContext';
 import { Lightbox } from '@/features/public-showcase/lightbox/Lightbox';
-import {
-  mediaKey,
-  useFolders,
-  useMedia,
-  useReorderMedia,
-  useUpdateImage,
-} from './queries';
-import { usePortfolioContext } from './PortfolioContext';
-
-export function reconcileSelection(prev: Set<string>, visibleIds: string[]): Set<string> {
-  if (prev.size === 0) return prev;
-  const visible = new Set(visibleIds);
-  let changed = false;
-  const next = new Set<string>();
-  for (const id of prev) {
-    if (visible.has(id)) next.add(id);
-    else changed = true;
-  }
-  return changed ? next : prev;
-}
+import { mediaKey } from '@/lib/queryKeys';
+import { useFolders, useMedia, useReorderMedia, useUpdateImage } from '@/queries';
+import { usePortfolioContext } from '@/context/PortfolioContext';
 
 export function ImagesPage() {
   const qc = useQueryClient();
@@ -51,37 +37,23 @@ export function ImagesPage() {
   const reorderMedia = useReorderMedia(portfolio.id);
   const updateImage = useUpdateImage(portfolio.id);
   const [selected, setSelected] = useState<FolderSelection>('all');
-  const [selection, setSelection] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useViewMode();
   const [lightboxEditing, setLightboxEditing] = useState<PortfolioImage | null>(null);
   const [lightboxDeleting, setLightboxDeleting] = useState<PortfolioImage | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  // Split media into typed lists for image-specific operations
   const allImages = useMemo(
     () => allMedia.filter((m): m is MediaItem & { mediaType: 'image' } => m.mediaType === 'image'),
     [allMedia],
   );
-
-  const toggleSelection = useCallback((id: string) => {
-    setSelection((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const clearSelection = useCallback(() => setSelection(new Set()), []);
 
   const visibleImages = useMemo(() => {
     if (selected === 'all') return allImages;
     return allImages.filter((img) => img.folderId === selected);
   }, [allImages, selected]);
 
-  useEffect(() => {
-    setSelection((prev) => reconcileSelection(prev, visibleImages.map((img) => img.id)));
-  }, [visibleImages]);
+  const visibleIds = useMemo(() => visibleImages.map((img) => img.id), [visibleImages]);
+  const { selection, toggleSelection, clearSelection, selectAll } = useImageSelection(visibleIds);
 
   if (!portfolio) {
     return (
@@ -101,7 +73,8 @@ export function ImagesPage() {
       const target = overId.slice('folder:'.length);
       if (target === 'all') return;
       const activeId = String(active.id);
-      const ids = selection.has(activeId) && selection.size > 0 ? Array.from(selection) : [activeId];
+      const ids =
+        selection.has(activeId) && selection.size > 0 ? Array.from(selection) : [activeId];
       void moveImagesToFolder(ids, target);
       return;
     }
@@ -140,7 +113,10 @@ export function ImagesPage() {
     const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed > 0) {
       qc.invalidateQueries({ queryKey: mediaKey(portfolio.id) });
-      toast({ title: `Could not move ${failed} image${failed === 1 ? '' : 's'}`, variant: 'destructive' });
+      toast({
+        title: `Could not move ${failed} image${failed === 1 ? '' : 's'}`,
+        variant: 'destructive',
+      });
     } else if (ids.length > 1) {
       toast({ title: `Moved ${ids.length} images` });
     }
@@ -161,7 +137,7 @@ export function ImagesPage() {
           selection={selection}
           onToggleSelection={toggleSelection}
           onClearSelection={clearSelection}
-          onSelectAll={() => setSelection(new Set(visibleImages.map((img) => img.id)))}
+          onSelectAll={selectAll}
           onMoveSelected={(folderId) => moveImagesToFolder(Array.from(selection), folderId)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}

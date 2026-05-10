@@ -4,7 +4,7 @@ import { DEFAULT_GALLERY_THEME_ID, get } from './registry';
 import { hexToHsl, hexToHslString, lighten, luminance, pickForeground } from './color';
 import { getFont } from './fonts';
 import { useFontStylesheet } from './useFontStylesheet';
-import type { FontScale } from '@/types';
+import type { FontScale } from '@/features/portfolio/types';
 
 interface ThemeScopeProps {
   themeId: string;
@@ -46,9 +46,9 @@ function hslToHexString({ h, s, l }: { h: number; s: number; l: number }): strin
   const c = (1 - Math.abs(2 * ln - 1)) * sn;
   const hp = (h % 360) / 60;
   const x = c * (1 - Math.abs((hp % 2) - 1));
-  let r = 0;
-  let g = 0;
-  let b = 0;
+  let r: number;
+  let g: number;
+  let b: number;
   if (hp < 1) [r, g, b] = [c, x, 0];
   else if (hp < 2) [r, g, b] = [x, c, 0];
   else if (hp < 3) [r, g, b] = [0, c, x];
@@ -56,7 +56,10 @@ function hslToHexString({ h, s, l }: { h: number; s: number; l: number }): strin
   else if (hp < 5) [r, g, b] = [x, 0, c];
   else [r, g, b] = [c, 0, x];
   const m = ln - c / 2;
-  const toByte = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  const toByte = (v: number) =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
   return `#${toByte(r)}${toByte(g)}${toByte(b)}`;
 }
 

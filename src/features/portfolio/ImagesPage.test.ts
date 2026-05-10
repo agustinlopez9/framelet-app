@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reconcileSelection } from './ImagesPage';
+import { reconcileSelection } from '@/hooks/useImageSelection';
 
 describe('reconcileSelection', () => {
   it('returns the same Set reference when prev is empty', () => {

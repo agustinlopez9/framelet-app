@@ -11,7 +11,9 @@ const UNFOCUSED_OPACITY = 0.55;
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(() =>
-    typeof window === 'undefined' ? false : window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    typeof window === 'undefined'
+      ? false
+      : window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -119,7 +121,9 @@ function VerticalFocus({ portfolio, images, hideHeader }: TemplateProps) {
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
         {hideHeader ? null : (
           <>
-            <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {portfolio.title || portfolio.handle}
+            </h1>
             {portfolio.bio ? (
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
             ) : null}
@@ -138,7 +142,9 @@ function VerticalFocus({ portfolio, images, hideHeader }: TemplateProps) {
       <OpenInViewerButton />
       {hideHeader ? null : (
         <header className="mb-24 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {portfolio.title || portfolio.handle}
+          </h1>
           {portfolio.bio ? (
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
           ) : null}

@@ -2,8 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { usePortfolioContext } from './PortfolioContext';
+import { Upload } from 'lucide-react';
+import { usePortfolioContext } from '@/context/PortfolioContext';
 import {
   MAX_IMAGE_BYTES,
   UploadValidationError,
@@ -19,45 +19,46 @@ import {
 } from '@/lib/api/videos';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { imagesKey, mediaKey, userKey } from './queries';
-import { Check, Upload, Video, X } from 'lucide-react';
-import { useMyUser } from './queries';
-
-interface QueueItem {
-  id: string;
-  file: File;
-  title: string;
-  kind: 'image' | 'video';
-  status: 'pending' | 'uploading' | 'done' | 'error' | 'invalid';
-  progress: number;
-  error?: string;
-  controller?: AbortController;
-}
+import { imagesKey, mediaKey, userKey } from '@/lib/queryKeys';
+import { useMyUser } from '@/queries';
+import { QueueItem, type UploadQueueItem } from './components/UploadPage/QueueItem';
 
 export function UploadPage() {
   const { portfolio, plan } = usePortfolioContext();
   const { data: user } = useMyUser();
   const qc = useQueryClient();
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [queue, setQueue] = useState<UploadQueueItem[]>([]);
   const queueRef = useRef(queue);
+  // eslint-disable-next-line react-hooks/refs
   queueRef.current = queue;
 
   const onDrop = useCallback(
     (files: File[]) => {
-      const next: QueueItem[] = files.map((file) => {
+      const next: UploadQueueItem[] = files.map((file) => {
         const id = crypto.randomUUID();
         const title = deriveTitleFromFilename(file.name);
         const isVideo = (ACCEPTED_VIDEO_TYPES as readonly string[]).includes(file.type);
         const kind = isVideo ? 'video' : 'image';
 
         if (isVideo && plan !== 'premium') {
-          return { id, file, title, kind, status: 'invalid', progress: 0, error: 'Video uploads require a Premium account.' };
+          return {
+            id,
+            file,
+            title,
+            kind,
+            status: 'invalid',
+            progress: 0,
+            error: 'Video uploads require a Premium account.',
+          };
         }
 
         try {
           if (kind === 'image') validateFile(file);
           else if (file.size > MAX_VIDEO_BYTES) {
-            throw new VideoValidationError(`File is ${(file.size / 1024 / 1024).toFixed(0)}MB; the limit is 500MB.`, file.name);
+            throw new VideoValidationError(
+              `File is ${(file.size / 1024 / 1024).toFixed(0)}MB; the limit is 500MB.`,
+              file.name,
+            );
           }
           return { id, file, title, kind, status: 'pending', progress: 0 };
         } catch (err) {
@@ -68,7 +69,10 @@ export function UploadPage() {
             kind,
             status: 'invalid',
             progress: 0,
-            error: err instanceof UploadValidationError || err instanceof VideoValidationError ? err.message : 'Invalid file.',
+            error:
+              err instanceof UploadValidationError || err instanceof VideoValidationError
+                ? err.message
+                : 'Invalid file.',
           };
         }
       });
@@ -83,12 +87,14 @@ export function UploadPage() {
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png'],
       'image/webp': ['.webp'],
-      ...(plan === 'premium' ? { 'video/mp4': ['.mp4'], 'video/webm': ['.webm'], 'video/quicktime': ['.mov'] } : {}),
+      ...(plan === 'premium'
+        ? { 'video/mp4': ['.mp4'], 'video/webm': ['.webm'], 'video/quicktime': ['.mov'] }
+        : {}),
     },
     maxSize: plan === 'premium' ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES,
   });
 
-  function updateItem(id: string, patch: Partial<QueueItem>) {
+  function updateItem(id: string, patch: Partial<UploadQueueItem>) {
     setQueue((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
@@ -142,14 +148,8 @@ export function UploadPage() {
 
   async function startAll() {
     const pending = queueRef.current.filter((q) => q.status === 'pending');
-    for (const item of pending) {
-      await startUpload(item.id);
-    }
+    for (const item of pending) await startUpload(item.id);
     if (pending.length > 0) toast({ title: `Uploaded ${pending.length} file(s)` });
-  }
-
-  function clearList() {
-    setQueue((prev) => prev.filter((q) => q.status === 'uploading'));
   }
 
   const hasClearable = queue.some((q) => q.status !== 'uploading');
@@ -183,13 +183,6 @@ export function UploadPage() {
               {plan === 'premium' ? ' · Videos (MP4, WebM, MOV) up to 500MB' : ''}
             </p>
           </div>
-
-{/*           {plan !== 'premium' ? (
-            <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-              <Lock className="h-4 w-4 shrink-0" />
-              <span>Video uploads are available on the Premium plan.</span>
-            </div>
-          ) : null} */}
         </CardContent>
       </Card>
 
@@ -198,7 +191,11 @@ export function UploadPage() {
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Queue ({queue.length})</CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={clearList} disabled={!hasClearable}>
+              <Button
+                variant="outline"
+                onClick={() => setQueue((prev) => prev.filter((q) => q.status === 'uploading'))}
+                disabled={!hasClearable}
+              >
                 Clear list
               </Button>
               <Button onClick={startAll} disabled={!queue.some((q) => q.status === 'pending')}>
@@ -208,51 +205,11 @@ export function UploadPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {queue.map((item) => (
-              <div key={item.id} className="rounded-md border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    {item.status === 'done' ? (
-                      <Check className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
-                    ) : item.kind === 'video' ? (
-                      <Video className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    ) : null}
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{item.file.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(item.file.size / 1024 / 1024).toFixed(2)}MB · {statusLabel(item)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.status === 'pending' ? (
-                      <Button size="sm" variant="outline" onClick={() => startUpload(item.id)}>Upload</Button>
-                    ) : null}
-                    {item.status === 'error' ? (
-                      <Button size="sm" variant="outline" onClick={() => startUpload(item.id)}>Retry</Button>
-                    ) : null}
-                    <Button size="icon" variant="ghost" onClick={() => removeItem(item.id)}
-                      aria-label={item.status === 'uploading' ? 'Cancel upload' : 'Remove from queue'}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {item.status === 'uploading' ? <Progress value={item.progress} className="mt-3" /> : null}
-                {item.error ? <p className="mt-2 text-xs text-destructive">{item.error}</p> : null}
-              </div>
+              <QueueItem key={item.id} item={item} onUpload={startUpload} onRemove={removeItem} />
             ))}
           </CardContent>
         </Card>
       ) : null}
     </div>
   );
-}
-
-function statusLabel(item: QueueItem): string {
-  switch (item.status) {
-    case 'pending': return 'Ready to upload';
-    case 'uploading': return `${item.progress}%`;
-    case 'done': return 'Done';
-    case 'error': return 'Failed';
-    case 'invalid': return 'Invalid';
-  }
 }

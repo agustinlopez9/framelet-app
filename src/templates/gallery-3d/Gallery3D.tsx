@@ -91,7 +91,9 @@ export default function Gallery3D({ portfolio, images, hideHeader }: TemplatePro
         {hideHeader ? null : (
           <>
             <h1 className="text-3xl font-semibold">{portfolio.title || portfolio.handle}</h1>
-            <p className="mt-3 max-w-xl text-muted-foreground">{portfolio.bio || 'No images yet.'}</p>
+            <p className="mt-3 max-w-xl text-muted-foreground">
+              {portfolio.bio || 'No images yet.'}
+            </p>
           </>
         )}
         {hideHeader ? <p className="text-muted-foreground">No images yet.</p> : null}
@@ -106,7 +108,9 @@ export default function Gallery3D({ portfolio, images, hideHeader }: TemplatePro
     >
       {hideHeader ? null : (
         <header className="pointer-events-none absolute left-0 right-0 top-0 z-10 px-6 pt-12 text-center">
-          <h1 className="text-4xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            {portfolio.title || portfolio.handle}
+          </h1>
           {portfolio.bio ? (
             <p className="mx-auto mt-3 max-w-2xl text-lg text-muted-foreground">{portfolio.bio}</p>
           ) : null}
@@ -116,7 +120,7 @@ export default function Gallery3D({ portfolio, images, hideHeader }: TemplatePro
       <OpenInViewerButton index={active} />
 
       <div
-        className="relative flex h-full items-center justify-center px-4 pb-20 pt-32 touch-pan-y select-none"
+        className="relative flex h-full touch-pan-y select-none items-center justify-center px-4 pb-20 pt-32"
         style={{ perspective: '1400px' }}
         onPointerDown={onStagePointerDown}
         onPointerMove={onStagePointerMove}
@@ -190,11 +194,7 @@ export default function Gallery3D({ portfolio, images, hideHeader }: TemplatePro
                     'rounded-md shadow-lg ring-1 ring-black/10 transition-shadow group-focus-visible/card:ring-2 group-focus-visible/card:ring-primary group-focus-visible/card:ring-offset-2 group-focus-visible/card:ring-offset-stone-50',
                     isActive ? '' : 'max-h-full max-w-full',
                   )}
-                  style={
-                    isActive
-                      ? { maxWidth: 'min(85vw, 720px)', maxHeight: '80vh' }
-                      : undefined
-                  }
+                  style={isActive ? { maxWidth: 'min(85vw, 720px)', maxHeight: '80vh' } : undefined}
                 />
               </button>
             );

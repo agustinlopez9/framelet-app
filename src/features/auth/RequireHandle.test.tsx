@@ -5,11 +5,11 @@ import type { Session } from '@supabase/supabase-js';
 
 const useSessionMock = vi.fn();
 
-vi.mock('./useSession', () => ({
+vi.mock('./hooks/useSession', () => ({
   useSession: () => useSessionMock(),
 }));
 
-import { RequireHandle } from './RequireHandle';
+import { RequireHandle } from './components/RequireHandle';
 
 function makeSession(handle: string | undefined): Session {
   return {

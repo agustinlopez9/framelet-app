@@ -1,6 +1,6 @@
 import { Pencil, Trash2 } from 'lucide-react';
 import { useLightboxState } from '@/features/public-showcase/lightbox/LightboxContext';
-import type { PortfolioImage } from '@/types';
+import type { PortfolioImage } from '@/features/portfolio/types';
 
 interface DashboardLightboxToolbarProps {
   onEdit: (image: PortfolioImage) => void;

@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
-import type { Portfolio, User, UserPlan } from '@/types';
+import type { Portfolio } from '@/features/portfolio/types';
+import type { User, UserPlan } from '@/types';
 
 interface PortfolioContextValue {
   portfolio: Portfolio;

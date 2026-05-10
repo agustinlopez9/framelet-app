@@ -35,9 +35,7 @@ function FeatureRow({ label, status }: Feature) {
       ) : (
         <Minus className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden />
       )}
-      <span className={status === 'excluded' ? 'text-muted-foreground' : undefined}>
-        {label}
-      </span>
+      <span className={status === 'excluded' ? 'text-muted-foreground' : undefined}>{label}</span>
       {status === 'coming-soon' ? (
         <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
           Coming Soon

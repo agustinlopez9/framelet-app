@@ -1,6 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
-import type { PortfolioImage } from '@/types';
+import type { PortfolioImage } from '@/features/portfolio/types';
 
 interface LightboxState {
   isOpen: boolean;
@@ -34,6 +42,7 @@ export function LightboxProvider({ images, children }: LightboxProviderProps) {
   // active image was deleted from the dashboard while the lightbox is open).
   useEffect(() => {
     if (images.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (isOpen) setIsOpen(false);
       return;
     }
@@ -42,12 +51,15 @@ export function LightboxProvider({ images, children }: LightboxProviderProps) {
     }
   }, [images.length, activeIndex, isOpen]);
 
-  const openAt = useCallback((index: number, trigger: HTMLElement | null = null) => {
-    if (index < 0 || index >= images.length) return;
-    triggerRef.current = trigger;
-    setActiveIndex(index);
-    setIsOpen(true);
-  }, [images.length]);
+  const openAt = useCallback(
+    (index: number, trigger: HTMLElement | null = null) => {
+      if (index < 0 || index >= images.length) return;
+      triggerRef.current = trigger;
+      setActiveIndex(index);
+      setIsOpen(true);
+    },
+    [images.length],
+  );
 
   const close = useCallback(() => {
     setIsOpen(false);
@@ -56,11 +68,14 @@ export function LightboxProvider({ images, children }: LightboxProviderProps) {
     queueMicrotask(() => t?.focus?.());
   }, []);
 
-  const goTo = useCallback((index: number) => {
-    if (images.length === 0) return;
-    const wrapped = ((index % images.length) + images.length) % images.length;
-    setActiveIndex(wrapped);
-  }, [images.length]);
+  const goTo = useCallback(
+    (index: number) => {
+      if (images.length === 0) return;
+      const wrapped = ((index % images.length) + images.length) % images.length;
+      setActiveIndex(wrapped);
+    },
+    [images.length],
+  );
 
   const goNext = useCallback(() => {
     if (images.length === 0) return;
@@ -72,15 +87,18 @@ export function LightboxProvider({ images, children }: LightboxProviderProps) {
     setActiveIndex((i) => (i - 1 + images.length) % images.length);
   }, [images.length]);
 
-  const value = useMemo<LightboxApi>(() => ({
-    state: { isOpen, activeIndex, images },
-    openAt,
-    close,
-    goNext,
-    goPrev,
-    goTo,
-    triggerRef,
-  }), [isOpen, activeIndex, images, openAt, close, goNext, goPrev, goTo]);
+  const value = useMemo<LightboxApi>(
+    () => ({
+      state: { isOpen, activeIndex, images },
+      openAt,
+      close,
+      goNext,
+      goPrev,
+      goTo,
+      triggerRef,
+    }),
+    [isOpen, activeIndex, images, openAt, close, goNext, goPrev, goTo],
+  );
 
   return <LightboxContext.Provider value={value}>{children}</LightboxContext.Provider>;
 }

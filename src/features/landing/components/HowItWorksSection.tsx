@@ -11,8 +11,7 @@ const steps: Step[] = [
   {
     index: '01',
     title: 'Upload',
-    description:
-      'Drag in your photos. Add a title, alt text, and a short description if you like.',
+    description: 'Drag in your photos. Add a title, alt text, and a short description if you like.',
     icon: <Upload className="h-5 w-5" strokeWidth={2.25} />,
   },
   {

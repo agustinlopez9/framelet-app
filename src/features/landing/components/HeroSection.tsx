@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useSession } from '@/features/auth/useSession';
+import { useSession } from '@/features/auth/hooks/useSession';
 
 export function HeroSection() {
   const { status } = useSession();

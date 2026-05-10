@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useSession } from './useSession';
+import { useSession } from '../hooks/useSession';
 
 export function RequireAuth() {
   const { status } = useSession();

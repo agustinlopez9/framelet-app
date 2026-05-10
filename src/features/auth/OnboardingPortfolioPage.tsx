@@ -20,10 +20,11 @@ import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 import { createPortfolio } from '@/lib/api/portfolios';
 import { ensureRegistered, list as listTemplates } from '@/templates';
-import { useSession } from './useSession';
+import { useSession } from './hooks/useSession';
 import { getUserPlan } from '@/lib/api/subscriptions';
-import { useMyPortfolios, portfoliosKey } from '@/features/portfolio/queries';
-import type { Portfolio } from '@/types';
+import { useMyPortfolios } from '@/queries';
+import { portfoliosKey } from '@/lib/queryKeys';
+import type { Portfolio } from '@/features/portfolio/types';
 
 ensureRegistered();
 
@@ -97,7 +98,7 @@ export function OnboardingPortfolioPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl py-16 px-4">
+    <div className="mx-auto max-w-2xl px-4 py-16">
       {step === 1 ? (
         <Card>
           <CardHeader>
@@ -125,7 +126,9 @@ export function OnboardingPortfolioPage() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bio <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormLabel>
+                        Bio <span className="font-normal text-muted-foreground">(optional)</span>
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="A short description of your work…"
@@ -138,7 +141,9 @@ export function OnboardingPortfolioPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">Next: choose a template</Button>
+                <Button type="submit" className="w-full">
+                  Next: choose a template
+                </Button>
               </form>
             </Form>
           </CardContent>
@@ -176,7 +181,9 @@ export function OnboardingPortfolioPage() {
                         src={template.thumbnail}
                         alt=""
                         className="h-full w-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
                       />
                     </div>
                     <div className="mt-3 flex items-center justify-between">
@@ -189,7 +196,9 @@ export function OnboardingPortfolioPage() {
               })}
             </div>
             {error ? (
-              <p className="text-sm text-destructive" role="alert">{error}</p>
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
             ) : null}
             <div className="flex gap-3">
               <Button type="button" variant="outline" onClick={() => setStep(1)}>

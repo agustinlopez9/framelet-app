@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { getPortfolioByHandle, type PublicPortfolioResult } from '@/lib/api/portfolios';
-import { useSession } from '@/features/auth/useSession';
+import { useSession } from '@/features/auth/hooks/useSession';
 import { TabbedTemplateHost } from './TabbedTemplateHost';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeScope } from '@/themes/ThemeScope';
@@ -85,7 +85,7 @@ export function PublicPortfolioPage() {
         themeId={state.data.portfolio.galleryThemeId}
         fontId={state.data.portfolio.fontId}
         fontScale={state.data.portfolio.fontScale}
-        className="min-h-screen text-foreground pb-32"
+        className="min-h-screen pb-32 text-foreground"
       >
         <TabbedTemplateHost
           portfolio={state.data.portfolio}

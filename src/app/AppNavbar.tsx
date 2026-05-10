@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Settings } from 'lucide-react';
-import { useSession } from '@/features/auth/useSession';
+import { useSession } from '@/features/auth/hooks/useSession';
 import { signOut } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';

@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useMyPortfolios } from '@/features/portfolio/queries';
+import { useMyPortfolios } from '@/queries';
 
 export function RequirePortfolio() {
   const { data: portfolios, isLoading } = useMyPortfolios();

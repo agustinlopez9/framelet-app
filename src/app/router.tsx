@@ -2,21 +2,25 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PublicLayout } from './PublicLayout';
 import { PrivateLayout } from './PrivateLayout';
 import { PortfolioLayout } from './PortfolioLayout';
-import { LoginPage } from '@/features/auth/LoginPage';
-import { SignUpPage } from '@/features/auth/SignUpPage';
-import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage';
-import { OnboardingPortfolioPage } from '@/features/auth/OnboardingPortfolioPage';
-import { RedirectIfAuthed, RequireAuth } from '@/features/auth/RequireAuth';
-import { RequirePortfolio } from '@/features/auth/RequirePortfolio';
-import { LandingPage } from '@/features/landing/LandingPage';
-import { PortfolioListPage } from '@/features/portfolio/PortfolioListPage';
-import { DashboardPage } from '@/features/portfolio/DashboardPage';
-import { ImagesPage } from '@/features/portfolio/ImagesPage';
-import { TemplatesPage } from '@/features/portfolio/TemplatesPage';
-import { SettingsPage } from '@/features/portfolio/SettingsPage';
-import { AccountSettingsPage } from '@/features/account/AccountSettingsPage';
-import { PublicPortfolioPage } from '@/features/public-showcase/PublicPortfolioPage';
-import { UserPortfolioRedirect } from '@/features/public-showcase/UserPortfolioRedirect';
+import {
+  LoginPage,
+  SignUpPage,
+  AuthCallbackPage,
+  OnboardingPortfolioPage,
+  RedirectIfAuthed,
+  RequireAuth,
+  RequirePortfolio,
+} from '@/features/auth';
+import { LandingPage } from '@/features/landing';
+import {
+  PortfolioListPage,
+  DashboardPage,
+  ImagesPage,
+  TemplatesPage,
+  SettingsPage,
+} from '@/features/portfolio';
+import { AccountSettingsPage } from '@/features/account';
+import { PublicPortfolioPage, UserPortfolioRedirect } from '@/features/public-showcase';
 
 export const router = createBrowserRouter([
   {

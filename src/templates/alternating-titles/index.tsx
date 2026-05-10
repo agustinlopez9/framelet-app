@@ -1,10 +1,10 @@
 import type { Template, TemplateProps } from '../types';
-import type { PortfolioImage } from '@/types';
+import type { PortfolioImage } from '@/features/portfolio/types';
 import { Figure } from '../_shared/Figure';
 import { OpenInViewerButton } from '../_shared/OpenInViewerButton';
 import { cn } from '@/lib/utils';
 import { useShowcaseLightbox } from '@/features/public-showcase/lightbox/LightboxContext';
-import { useFadeInOnScroll } from '@/lib/useFadeInOnScroll';
+import { useFadeInOnScroll } from '@/hooks/useFadeInOnScroll';
 
 function AlternatingTitles({ portfolio, images, hideHeader }: TemplateProps) {
   const { openAt, interactive } = useShowcaseLightbox();
@@ -17,7 +17,9 @@ function AlternatingTitles({ portfolio, images, hideHeader }: TemplateProps) {
       <OpenInViewerButton />
       {hideHeader ? null : (
         <header className="mb-12">
-          <h1 className="text-4xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            {portfolio.title || portfolio.handle}
+          </h1>
           {portfolio.bio ? (
             <p className="mt-4 max-w-3xl text-lg text-muted-foreground">{portfolio.bio}</p>
           ) : null}
@@ -74,9 +76,7 @@ function AlternatingTitleRow({ image, idx, onOpen }: RowProps) {
         />
       </Figure>
       <aside className="md:flex-1 md:self-start">
-        <h2 className="text-2xl font-medium tracking-tight">
-          {image.title || 'Untitled'}
-        </h2>
+        <h2 className="text-2xl font-medium tracking-tight">{image.title || 'Untitled'}</h2>
         {image.description ? (
           <p className="mt-3 text-muted-foreground">{image.description}</p>
         ) : null}

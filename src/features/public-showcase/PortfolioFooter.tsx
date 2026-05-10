@@ -1,5 +1,5 @@
 import { Facebook, Globe, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
-import type { Portfolio, SocialPlatform } from '@/types';
+import type { Portfolio, SocialPlatform } from '@/features/portfolio/types';
 
 type IconComponent = (props: { className?: string; 'aria-hidden'?: boolean }) => JSX.Element;
 

@@ -1,9 +1,9 @@
 import type { Template, TemplateProps } from '../types';
-import type { PortfolioImage } from '@/types';
+import type { PortfolioImage } from '@/features/portfolio/types';
 import { Figure } from '../_shared/Figure';
 import { OpenInViewerButton } from '../_shared/OpenInViewerButton';
 import { useShowcaseLightbox } from '@/features/public-showcase/lightbox/LightboxContext';
-import { useFadeInOnScroll } from '@/lib/useFadeInOnScroll';
+import { useFadeInOnScroll } from '@/hooks/useFadeInOnScroll';
 import { cn } from '@/lib/utils';
 
 function SimpleGrid({ portfolio, images, hideHeader }: TemplateProps) {
@@ -17,7 +17,9 @@ function SimpleGrid({ portfolio, images, hideHeader }: TemplateProps) {
       <OpenInViewerButton />
       {hideHeader ? null : (
         <header className="mb-10 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{portfolio.title || portfolio.handle}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {portfolio.title || portfolio.handle}
+          </h1>
           {portfolio.bio ? (
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">{portfolio.bio}</p>
           ) : null}
@@ -53,10 +55,7 @@ function FadeInTile({ image, idx, onOpen }: FadeInTileProps) {
   });
   return (
     <div ref={ref} className={cn('fade-up-init', shown && 'fade-up-shown')}>
-      <Figure
-        ariaLabel={`Open ${image.title || `image ${idx + 1}`}`}
-        onClick={onOpen}
-      >
+      <Figure ariaLabel={`Open ${image.title || `image ${idx + 1}`}`} onClick={onOpen}>
         <img
           src={image.url}
           alt={image.altText || image.title || 'Portfolio image'}

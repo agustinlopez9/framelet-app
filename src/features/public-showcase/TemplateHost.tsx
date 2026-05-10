@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { ensureRegistered, get, DEFAULT_TEMPLATE_ID } from '@/templates';
 import type { Template } from '@/templates/types';
-import type { Portfolio, PortfolioImage } from '@/types';
+import type { Portfolio, PortfolioImage } from '@/features/portfolio/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LightboxProvider } from './lightbox/LightboxContext';
 import { Lightbox } from './lightbox/Lightbox';
@@ -32,7 +32,13 @@ function TemplateLoadingFallback() {
   );
 }
 
-export function TemplateHost({ portfolio, images, templateIdOverride, inPreview = false, hideHeader = false }: TemplateHostProps) {
+export function TemplateHost({
+  portfolio,
+  images,
+  templateIdOverride,
+  inPreview = false,
+  hideHeader = false,
+}: TemplateHostProps) {
   const requestedId = templateIdOverride ?? portfolio.templateId;
   const resolved: Template = useMemo(() => {
     const t = get(requestedId);
@@ -55,6 +61,7 @@ export function TemplateHost({ portfolio, images, templateIdOverride, inPreview 
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setComponent(null);
     resolved
       .loadComponent()

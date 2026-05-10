@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { Portfolio, PortfolioImage, User } from '@/types';
+import type { Portfolio, PortfolioImage } from '@/features/portfolio/types';
+import type { User } from '@/types';
 
 vi.mock('@/features/public-showcase/TabbedTemplateHost', () => ({
   TabbedTemplateHost: () => <div data-testid="tabbed-template-host" />,

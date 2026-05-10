@@ -5,7 +5,7 @@ import SideTitles from './side-titles';
 import AlternatingTitles from './alternating-titles';
 import VerticalFocus from './vertical-focus';
 import Gallery3D from './gallery-3d/Gallery3D';
-import type { Portfolio, PortfolioImage } from '@/types';
+import type { Portfolio, PortfolioImage } from '@/features/portfolio/types';
 
 function makePortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
   return {

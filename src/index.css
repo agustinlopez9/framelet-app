@@ -8,8 +8,8 @@
      near-white violet-tinted background. Per-portfolio gallery themes
      in src/themes/catalog.ts are independent of this. */
   :root {
-    --background: 240 30% 98%;       /* Near-white with a faint violet cast */
-    --foreground: 245 30% 14%;       /* Deep indigo near-black */
+    --background: 240 30% 98%; /* Near-white with a faint violet cast */
+    --foreground: 245 30% 14%; /* Deep indigo near-black */
 
     --card: 0 0% 100%;
     --card-foreground: 245 30% 14%;
@@ -17,16 +17,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 245 30% 14%;
 
-    --primary: 262 60% 56%;          /* Vibrant purple — CTAs, ring, logo */
+    --primary: 262 60% 56%; /* Vibrant purple — CTAs, ring, logo */
     --primary-foreground: 240 30% 98%;
 
-    --secondary: 220 70% 88%;        /* Soft sky blue — muted surfaces */
+    --secondary: 220 70% 88%; /* Soft sky blue — muted surfaces */
     --secondary-foreground: 245 30% 14%;
 
-    --muted: 240 20% 94%;            /* Slightly gray — section backgrounds */
+    --muted: 240 20% 94%; /* Slightly gray — section backgrounds */
     --muted-foreground: 245 16% 38%;
 
-    --accent: 230 70% 70%;           /* Mid blue — gradient pair, accents */
+    --accent: 230 70% 70%; /* Mid blue — gradient pair, accents */
     --accent-foreground: 245 30% 14%;
 
     --destructive: 0 65% 50%;
@@ -46,7 +46,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
   }
 }
 
@@ -101,7 +103,9 @@
   .fade-up-init {
     opacity: 0;
     transform: translate3d(0, 8px, 0);
-    transition: opacity 220ms ease-out, transform 220ms ease-out;
+    transition:
+      opacity 220ms ease-out,
+      transform 220ms ease-out;
     will-change: opacity, transform;
   }
   .fade-up-shown {
@@ -113,7 +117,9 @@
   .slide-up-init {
     opacity: 0;
     transform: translate3d(0, 16px, 0);
-    transition: opacity 320ms ease-out, transform 320ms ease-out;
+    transition:
+      opacity 320ms ease-out,
+      transform 320ms ease-out;
     will-change: opacity, transform;
   }
   .slide-up-shown {

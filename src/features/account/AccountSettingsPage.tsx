@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useMyUser } from '@/features/portfolio/queries';
+import { useMyUser } from '@/queries';
 import { UsernameEditor } from './components/UsernameEditor';
 import { PasswordEditor } from './components/PasswordEditor';
 

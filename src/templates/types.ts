@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { Portfolio, PortfolioImage, TemplateConfig } from '@/types';
+import type { Portfolio, PortfolioImage, TemplateConfig } from '@/features/portfolio/types';
 
 export interface TemplateProps<C extends TemplateConfig = TemplateConfig> {
   portfolio: Portfolio;

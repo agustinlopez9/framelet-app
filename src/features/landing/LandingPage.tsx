@@ -1,8 +1,8 @@
-import { HeroSection } from './sections/HeroSection';
-import { AudienceSection } from './sections/AudienceSection';
-import { HowItWorksSection } from './sections/HowItWorksSection';
-import { PricingSection } from './sections/PricingSection';
-import { LandingFooter } from './sections/LandingFooter';
+import { HeroSection } from './components/HeroSection';
+import { AudienceSection } from './components/AudienceSection';
+import { HowItWorksSection } from './components/HowItWorksSection';
+import { PricingSection } from './components/PricingSection';
+import { LandingFooter } from './components/LandingFooter';
 
 export function LandingPage() {
   return (

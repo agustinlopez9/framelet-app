@@ -1,8 +1,8 @@
 import { NavLink, Navigate, Outlet, useParams } from 'react-router-dom';
 import { ArrowLeft, Home, Images, LayoutGrid, Settings } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PortfolioContext } from '@/features/portfolio/PortfolioContext';
-import { usePortfolio, useMyUser, useUserPlan } from '@/features/portfolio/queries';
+import { PortfolioContext } from '@/context/PortfolioContext';
+import { usePortfolio, useMyUser, useUserPlan } from '@/queries';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -39,7 +39,7 @@ export function PortfolioLayout() {
         <aside className="space-y-1">
           <Link
             to="/dashboard"
-            className="mb-3 flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="mb-3 flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             All portfolios

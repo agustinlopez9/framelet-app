@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ImageFolder } from '@/types';
+import type { ImageFolder } from '@/features/portfolio/types';
 
 interface FolderRow {
   id: string;
